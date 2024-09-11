@@ -8,8 +8,8 @@ import numpy as np
 from psro_lib import abstract_meta_trainer
 from psro_lib import strategy_selectors
 from psro_lib import utils
-# from psro_lib.rl_agents.rl_factory import RandomPolicy
-from tianshou.policy import RandomPolicy
+
+from rl_agent_sb3.random_policy import RandomPolicy
 
 # This allows implementation of rectified Nash.
 TRAIN_TARGET_SELECTORS = {
@@ -93,7 +93,7 @@ class PSROSolver(abstract_meta_trainer.AbstractMetaTrainer):
           (
               [initial_policies[0]]
               if initial_policies
-    else [RandomPolicy()] #TODO: Check if random policy needs input. Should it match a particular game.
+    else [RandomPolicy(self._game, 0)]
           )
       ]
     else:
@@ -102,7 +102,7 @@ class PSROSolver(abstract_meta_trainer.AbstractMetaTrainer):
           (
               [initial_policies[k]]
               if initial_policies
-              else [RandomPolicy()] #TODO: Check if random policy needs input.
+              else [RandomPolicy(self._game, k)]
           )
           for k in range(self._num_players)
       ]
@@ -218,7 +218,7 @@ class PSROSolver(abstract_meta_trainer.AbstractMetaTrainer):
 
     # List of List of new policies (One list per player) #TODO: check the oracle.
     # ===================================
-    # The oracle is given by Tianshou.
+    # The oracle is given by sb3.
     # ===================================
     self._new_policies = self._oracle(env=self._game,
                                       old_policies=total_policies,

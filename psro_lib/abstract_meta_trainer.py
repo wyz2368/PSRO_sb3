@@ -1,35 +1,13 @@
 import numpy as np
 from psro_lib import meta_strategies
 from psro_lib.utils import init_logger
-from psro_lib.game_factory import get_env_factory
-# TODO: Check if the following works.
-# from psro_lib.rl_agents.master_policy import MultiAgentPolicyManager_PSRO
-
-from tianshou.data import Collector
-from tianshou.env import DummyVectorEnv, SubprocVectorEnv
-from tianshou.policy.multiagent.mapolicy import MultiAgentPolicyManager
-
-from shimmy.openspiel_compatibility import OpenSpielCompatibilityV0
 
 _DEFAULT_META_STRATEGY_METHOD = "prd"
 
-#TODO: Add comments to the form of returned rewards.
-
 
 def _process_string_or_callable(string_or_callable, dictionary):
-  """Process a callable or a string representing a callable.
-
-  Args:
-    string_or_callable: Either a string or a callable
-    dictionary: Dictionary of shape {string_reference: callable}
-
-  Returns:
-    string_or_callable if string_or_callable is a callable ; otherwise,
-    dictionary[string_or_callable]
-
-  Raises:
-    NotImplementedError: If string_or_callable is of the wrong type, or has an
-      unexpected value (Not present in dictionary).
+  """
+  Process a callable or a string representing a callable.
   """
   if callable(string_or_callable):
     return string_or_callable
@@ -43,6 +21,27 @@ def _process_string_or_callable(string_or_callable, dictionary):
                                   list(dictionary.keys()),
                                   string_or_callable)) from e
 
+def sample_episode(env, policies):
+  name_to_id = {}
+  for i, player_string in enumerate(env.possible_agents):
+    name_to_id[player_string] = i
+
+  rewards = np.zeros(len(env.possible_agents))
+
+  env.reset()
+  for agent in env.agent_iter():
+    agent_id = name_to_id[agent]
+    observation, reward, termination, truncation, info = env.last()
+    rewards[agent_id] += reward
+
+    if termination or truncation:
+      action = None
+    else:
+      action = policies[agent_id].predict(observation)
+
+    env.step(action)
+
+  return rewards
 
 
 class AbstractMetaTrainer(object):
@@ -83,25 +82,7 @@ class AbstractMetaTrainer(object):
     self._num_players = len(self._game.agents)
     self._game_num_players = self._num_players
 
-    # Tianshou
     self.logger = init_logger(logger_name=__name__, checkpoint_dir=checkpoint_dir)
-    self.dummy_env = dummy_env
-
-    # if isinstance(self._game, OpenSpielCompatibilityV0):
-    #   env_name = self._game.game_name
-    # else:
-    #   env_name = self._game.env.metadata["name"]
-    # env_name = "kuhn_poker"
-    if hasattr(self._game.env, 'game_name'):
-      env_name = self._game.env.game_name
-    else:
-      env_name = self._game.env.metadata["name"]
-
-    if self.dummy_env:
-      self.test_envs = DummyVectorEnv([get_env_factory(env_name)])
-    else:
-      self.test_envs = SubprocVectorEnv([get_env_factory(env_name) for _ in range(5)])
-
 
     self.symmetric_game = symmetric_game
     self._num_players = 1 if symmetric_game else self._num_players
@@ -149,30 +130,17 @@ class AbstractMetaTrainer(object):
     return NotImplementedError("update_empirical_gamestate not implemented."
                                " Seed passed as argument : {}".format(seed))
 
-  def sample_episodes(self, policies, num_episodes): #TODO: Test this function
+  def sample_episodes(self, policies, num_episodes):
     """Samples episodes and averages their returns.
-
-    Args:
-      policies: A list of policies representing the policies executed by each
-        player.
-      num_episodes: Number of episodes to execute to estimate average return of
-        policies.
 
     Returns:
       Average episode return over num episodes.
     """
-    # Create a Tianshou multiagent policy.
-    #TODO: Can we build one master policy and just update its policies?
-    master_policy = MultiAgentPolicyManager(policies=policies, env=self._game)
-    # Reset the simulator.
-    self.test_envs.reset()
-    # Create a Tianshou collector to sample trajectories.
-    test_collector = Collector(master_policy, self.test_envs)
-    # Rollout.
-    collect_result = test_collector.collect(n_episode=num_episodes)
-    return collect_result["rews"].mean(axis=0) #
+    totals = np.zeros(self._num_players)
+    for _ in range(num_episodes):
+      totals += sample_episode(self._game, policies)
+    return totals / num_episodes
 
-  #TODO: check collector behavior for multi-agent.
 
   def get_meta_strategies(self):
     """Returns the current best response target."""
