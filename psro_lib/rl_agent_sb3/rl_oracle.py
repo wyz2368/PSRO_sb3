@@ -132,4 +132,8 @@ class RLOracle(optimization_oracle.AbstractOracle):
 
     # Freeze the new policies to keep their weights static.
     freeze_all(new_policies)
-    return new_policies
+
+    format_policies = []
+    for pol in new_policies:
+      format_policies.append([pol])
+    return format_policies

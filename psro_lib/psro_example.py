@@ -26,7 +26,7 @@ import gymnasium
 
 FLAGS = flags.FLAGS
 # Game-related
-flags.DEFINE_string("game_name", "tictactoe_v3", "Game names: kuhn_poker, tictactoe_v3, leduc_holdem_v4")
+flags.DEFINE_string("game_name", "rps_v2", "Game names: kuhn_poker, tictactoe_v3, leduc_holdem_v4")
 flags.DEFINE_integer("n_players", 2, "The number of players.")
 
 # PSRO related
@@ -36,7 +36,7 @@ flags.DEFINE_integer("sims_per_entry", 10,
                      ("Number of simulations to run to estimate each element"
                       "of the game outcome matrix."))
 
-flags.DEFINE_integer("gpsro_iterations", 10,
+flags.DEFINE_integer("gpsro_iterations", 5,
                      "Number of training steps for GPSRO.")
 flags.DEFINE_bool("symmetric_game", False, "Whether to consider the current "
                                            "game as a symmetric game.")
@@ -47,8 +47,7 @@ flags.DEFINE_string("rectifier", "",
 
 
 # General (RL) agent parameters
-flags.DEFINE_string("oracle_type", "DQN", "Choices are DQN, PG (Policy "
-                                          "Gradient), PPO, random")
+flags.DEFINE_string("oracle_type", "PPO", "DQN, PPO, MaskablePPO (MaskableActorCriticPolicy)")
 flags.DEFINE_integer("number_training_episodes", int(500), "Number training (default 1e4) " ############
                                                            "episodes per RL policy. Used for PG and DQN")
 flags.DEFINE_float("self_play_proportion", 0.0, "Self play proportion")
@@ -64,40 +63,17 @@ flags.DEFINE_float("dqn_learning_rate", 5e-2, "DQN learning rate.")
 # General
 flags.DEFINE_string("root_result_folder", 'root_result_psro', "root directory of saved results")
 flags.DEFINE_integer("seed", None, "Seed.")
-flags.DEFINE_bool("verbose", True, "Enables verbose printing and profiling.")
+flags.DEFINE_integer("verbose", 1, "Enables verbose printing and profiling.")
 flags.DEFINE_bool("dummy_env", True, "Enables dummy env otherwise subproc env")
 
 
-def get_space_sizes(env):
-    # Assume the players' observation space shapes are same.
-    if isinstance(env, OpenSpielCompatibilityV0):
-        #TODO: make this work for asymetric players.
-        observation_space = env.observation_spaces["player_0"]
-        action_space = env.action_spaces["player_0"]
-    else:
-        observation_space = (
-            env.observation_space["observation"]
-            if isinstance(env.observation_space, gymnasium.spaces.Dict)
-            else env.observation_space
-        )
-        action_space = env.action_space
-    state_size = observation_space.shape or observation_space.n
-    num_actions = action_space.shape or action_space.n
-
-    return state_size, num_actions
-
-
-def init_oracle(env, oracle_type):
-    state_size, num_actions = get_space_sizes(env)
+def init_oracle(env):
 
     # Return the RL policy from SB3. Currently, assume DQN.
     agent_class = generate_agent_class(agent_name=FLAGS.oracle_type)
 
-    # TODO: Check this consistency with SB3.
     agent_kwargs = {
         "policy": "MlpPolicy",
-        "state_size": state_size,
-        "num_actions": num_actions,
         "hidden_layers_sizes": FLAGS.hidden_layer_size,
         "hidden_layers": FLAGS.hidden_layers,
         "batch_size": FLAGS.batch_size,
@@ -109,9 +85,9 @@ def init_oracle(env, oracle_type):
     oracle = RLOracle(env=env,
                       best_response_class=agent_class,
                       best_response_kwargs=agent_kwargs,
-                      number_training_episodes=FLAGS.number_training_episodes,
+                      total_timesteps=FLAGS.number_training_episodes,
                       sigma=FLAGS.sigma,
-                      verbose=FLAGS.verbose)
+                      verbose=0)
 
     agents = oracle.generate_new_policies()
     freeze_all(agents)
@@ -177,6 +153,7 @@ def main(argv):
     if len(argv) > 1:
         raise app.UsageError("Too many command-line arguments.")
 
+    # Set up the seed.
     if FLAGS.seed is None:
         seed = np.random.randint(low=0, high=1e5)
     else:
@@ -186,20 +163,21 @@ def main(argv):
 
     # Load game. This should be adaptive to different environments.
     env = get_env_factory(FLAGS.game_name)()
+    env.reset()
 
     # Set up working directory.
     if not os.path.exists(FLAGS.root_result_folder):
         os.makedirs(FLAGS.root_result_folder)
 
     checkpoint_dir = FLAGS.game_name
-    checkpoint_dir = checkpoint_dir + "_oracle_" + FLAGS.oracle_type + '_se_' + str(seed) + '_' + datetime.datetime.now().strftime(
+    checkpoint_dir += checkpoint_dir + "_oracle_" + FLAGS.oracle_type + '_se_' + str(seed) + '_' + datetime.datetime.now().strftime(
         '%Y-%m-%d_%H-%M-%S')
     checkpoint_dir = os.path.join(os.getcwd(), FLAGS.root_result_folder, checkpoint_dir)
 
     writer = SummaryWriter(logdir=checkpoint_dir + '/log')
 
     # Initialize oracle and agents
-    oracle, agents = init_oracle(env=env, oracle_type=FLAGS.oracle_type)
+    oracle, agents = init_oracle(env=env)
 
     gpsro_looper(env, oracle, agents, writer, checkpoint_dir=checkpoint_dir, seed=seed)
 

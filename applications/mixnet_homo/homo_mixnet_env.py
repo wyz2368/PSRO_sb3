@@ -9,16 +9,8 @@ from applications.mixnet_homo.graph_generator import HOMOGraph
 
 
 def env():
-    """
-    The env function often wraps the environment in wrappers by default.
-    You can find full documentation for these methods
-    elsewhere in the developer documentation.
-    """
     env = Mixnet_env()
-    # this wrapper helps error handling for discrete action spaces
     env = wrappers.AssertOutOfBoundsWrapper(env)
-    # Provides a wide vareity of helpful user errors
-    # Strongly recommended
     env = wrappers.OrderEnforcingWrapper(env)
     return env
 
@@ -33,22 +25,10 @@ class Mixnet_env(AECEnv):
     def __init__(self,
                  total_time_step=5,
                  render_mode=None):
-        """
-        The init method takes in environment arguments and
-         should define the following attributes:
-        - possible_agents
-        - render_mode
 
-        Note: as of v1.18.1, the action_spaces and observation_spaces attributes are deprecated.
-        Spaces should be defined in the action_space() and observation_space() methods.
-        If these methods are not overridden, spaces will be inferred from self.observation_spaces/action_spaces, raising a warning.
-
-        These attributes should not be changed after initialization.
-        """
         self.possible_agents = ["player_" + str(r) for r in range(2)] # P0: defender, P1: attacker
         self.render_mode = render_mode
 
-        # optional: a mapping between agent name and ID
         self.agent_name_mapping = dict(
             zip(self.possible_agents, list(range(len(self.possible_agents))))
         )
@@ -56,16 +36,6 @@ class Mixnet_env(AECEnv):
         self._action_spaces = {}
         self._action_spaces["player_0"] = Box(0.0, 1.0, (6,), np.float32)
         self._action_spaces["player_1"] = Box(0.0, 1.0, (6,), np.float32)
-
-        # self.observation_spaces = {
-        #     i: Dict(
-        #         {
-        #             "observation": Box(low=0, high=1.0, shape=(6,), dtype=np.float32),
-        #             "action_mask": Box(low=0.0, high=1, shape=(9,), dtype=np.float32),
-        #         }
-        #     )
-        #     for i in self.agents
-        # }
 
         self._observation_spaces = {}
         self._observation_spaces["player_0"] = Box(0, 1.0, (6,), np.float32)
@@ -90,61 +60,24 @@ class Mixnet_env(AECEnv):
                             seed=100)
 
 
-    # Observation space should be defined here.
-    # lru_cache allows observation and action spaces to be memoized, reducing clock cycles required to get each agent's space.
-    # If your spaces change over time, remove this line (disable caching).
     @functools.lru_cache(maxsize=None)
     def observation_space(self, agent):
-        # gymnasium spaces are defined and documented here: https://gymnasium.farama.org/api/spaces/
         return Box(0.0, 1.0, (6,), np.float32)
 
-    # Action space should be defined here.
-    # If your spaces change over time, remove this line (disable caching).
     @functools.lru_cache(maxsize=None)
     def action_space(self, agent):
         return Box(0.0, 1.0, (6,), np.float32)
 
-    def render(self):
-        """
-        Renders the environment. In human mode, it can print to terminal, open
-        up a graphical window, or open up some other display that a human can see and understand.
-        """
-        pass
-
     def observe(self, agent):
-        """
-        Observe should return the observation of the specified agent. This function
-        should return a sane observation (though not necessarily the most up to date possible)
-        at any time after reset() is called.
-        """
-        # observation of one agent is the previous state of the other
-
-        # return {"observation": np.array(self.observations[agent]), "action_mask": np.zeros(6, "int8")}
         return np.array(self.observations[agent])
 
+    def render(self):
+        pass
 
     def close(self):
-        """
-        Close should release any graphical displays, subprocesses, network connections
-        or any other environment data which should not be kept around after the
-        user is no longer using the environment.
-        """
         pass
 
     def reset(self, seed=None, options=None):
-        """
-        Reset needs to initialize the following attributes
-        - agents
-        - rewards
-        - _cumulative_rewards
-        - terminations
-        - truncations
-        - infos
-        - agent_selection
-        And must set up the environment so that render(), step(), and observe()
-        can be called without issues.
-        Here it sets up the state dictionary which is used by step() and the observations dictionary which is used by step() and observe()
-        """
         self.agents = self.possible_agents[:]
         self.rewards = {agent: 0 for agent in self.agents}
         self._cumulative_rewards = {agent: 0 for agent in self.agents}
@@ -167,18 +100,8 @@ class Mixnet_env(AECEnv):
         self.observations["player_1"] = self.graph.get_att_observation()
         self.joint_actions = {agent: None for agent in self.agents}
 
+
     def step(self, action):
-        """
-        step(action) takes in an action for the current agent (specified by
-        agent_selection) and needs to update
-        - rewards
-        - _cumulative_rewards (accumulating the rewards)
-        - terminations
-        - truncations
-        - infos
-        - agent_selection (to the next agent)
-        And any internal state used by observe() or render()
-        """
         if (
             self.terminations[self.agent_selection]
             or self.truncations[self.agent_selection]
@@ -225,4 +148,9 @@ class Mixnet_env(AECEnv):
         self.agent_selection = self._agent_selector.next()
         # Adds .rewards to ._cumulative_rewards
         self._accumulate_rewards()
+
+
+
+
+
 
