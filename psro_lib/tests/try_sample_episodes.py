@@ -5,8 +5,8 @@ import numpy as np
 from pettingzoo.classic import rps_v2, tictactoe_v3
 from psro_lib.rl_agent_sb3.random_policy import RandomPolicy
 
-# env = rps_v2.env()
-env = tictactoe_v3.env()
+env = rps_v2.env()
+# env = tictactoe_v3.env()
 env.reset(seed=42)
 
 def sample_episode(env, policies):
@@ -20,20 +20,19 @@ def sample_episode(env, policies):
   for agent in env.agent_iter():
     agent_id = name_to_id[agent]
     observation, reward, termination, truncation, info = env.last()
-    print("obs:", observation)
     rewards[agent_id] += reward
 
     if termination or truncation:
       action = None
     else:
-      action = policies[agent_id].predict(observation)
+      action, _ = policies[agent_id].predict(observation)
 
     env.step(action)
 
   return rewards
 
 
-policies = [RandomPolicy(env=env, agent_id=0), RandomPolicy(env=env, agent_id=0)]
+policies = [RandomPolicy(env=env, agent_id=0), RandomPolicy(env=env, agent_id=1)]
 
 for _ in range(10):
   rewards = sample_episode(env=env, policies=policies)

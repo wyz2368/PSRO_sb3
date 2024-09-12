@@ -1,6 +1,7 @@
 import numpy as np
 from psro_lib import meta_strategies
 from psro_lib.utils import init_logger
+from shimmy.openspiel_compatibility import OpenSpielCompatibilityV0
 
 _DEFAULT_META_STRATEGY_METHOD = "prd"
 
@@ -37,7 +38,16 @@ def sample_episode(env, policies):
     if termination or truncation:
       action = None
     else:
-      action = policies[agent_id].predict(observation)
+      if isinstance(env, OpenSpielCompatibilityV0):
+        action_mask = info["action_mask"]
+        observation = observation["observation"]
+        action, _ = policies[agent_id].predict(observation, action_masks=action_mask)
+      elif isinstance(observation, dict):
+        action_mask = observation["action_mask"]
+        observation = observation["observation"]
+        action, _ = policies[agent_id].predict(observation, action_masks=action_mask)
+      else:
+        action, _ = policies[agent_id].predict(observation)
 
     env.step(action)
 

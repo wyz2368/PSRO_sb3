@@ -11,13 +11,13 @@ env = GymPettingZooEnv(petz_env=petz_env,
 
 observation, info = env.reset()
 
-# print(env.action_space)
+print(env.action_space.n)
 print(type(observation))
 
 random_policy = RandomPolicy(env=petz_env, agent_id=0)
 
 for _ in range(20):
-   print("action_masks:", env.action_mask)
+   print("action_masks:", env.action_mask, type(env.action_mask))
    action, _ = random_policy.predict(observation, action_masks=env.action_mask)
    # action = env.action_space.sample()
    print("---------------")

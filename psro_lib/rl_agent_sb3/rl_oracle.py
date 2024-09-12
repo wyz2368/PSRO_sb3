@@ -5,9 +5,12 @@ import copy
 import torch
 
 from open_spiel.python.algorithms.psro_v2 import optimization_oracle
+from sb3_contrib.common.wrappers import ActionMasker
 from stable_baselines3.common.callbacks import EvalCallback
 
 from psro_lib.wrappers.gym_wrapper import GymPettingZooEnv
+from psro_lib.rl_agent_sb3.rl_factory import generate_agent_policy
+from sb3_contrib import MaskablePPO
 
 def freeze_all(policies):
   """
@@ -50,6 +53,11 @@ class RLOracle(optimization_oracle.AbstractOracle):
     self._best_response_class = best_response_class
     self._best_response_kwargs = best_response_kwargs
 
+    if self._best_response_kwargs["policy"] == "MaskableActorCriticPolicy":
+      def mask_fn(env):
+        return env.action_mask
+      self.gym_env = ActionMasker(env=self.gym_env, action_mask_fn=mask_fn)
+
     self.sigma = sigma  # Noise for copying strategies. int(number_training_episodes)
     self.total_timesteps = total_timesteps
 
@@ -73,8 +81,8 @@ class RLOracle(optimization_oracle.AbstractOracle):
       if not copy_from_prev:
         # Create a DRL policy.
         # TODO: SAC may need action noise. Possibly callbacks.
-        # TODO: If action masks are used, then the policy should be maskable.
-        policy = self._best_response_class(policy="MlpPolicy",
+        nn = generate_agent_policy(self._best_response_kwargs["policy"])
+        policy = self._best_response_class(policy=nn,
                                            env=self.gym_env,
                                            verbose=self.verbose)
       # Copy from previous iterations.

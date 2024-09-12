@@ -71,6 +71,7 @@ flags.DEFINE_bool("dummy_env", True, "Enables dummy env otherwise subproc env")
 def get_space_sizes(env):
     # Assume the players' observation space shapes are same.
     if isinstance(env, OpenSpielCompatibilityV0):
+        #TODO: make this work for asymetric players.
         observation_space = env.observation_spaces["player_0"]
         action_space = env.action_spaces["player_0"]
     else:
@@ -94,6 +95,7 @@ def init_oracle(env, oracle_type):
 
     # TODO: Check this consistency with SB3.
     agent_kwargs = {
+        "policy": "MlpPolicy",
         "state_size": state_size,
         "num_actions": num_actions,
         "hidden_layers_sizes": FLAGS.hidden_layer_size,

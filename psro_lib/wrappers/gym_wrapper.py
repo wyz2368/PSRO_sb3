@@ -1,4 +1,5 @@
 import gymnasium as gym
+import numpy as np
 
 from psro_lib import utils
 from shimmy.openspiel_compatibility import OpenSpielCompatibilityV0
@@ -56,6 +57,9 @@ class GymPettingZooEnv(gym.Env):
             observation = observation["observation"]
         elif self.shimmy and "action_mask" in info:
             self.action_mask = info["action_mask"]
+        else:
+            num_action = self.action_space.shape or self.action_space.n
+            self.action_mask = np.ones(num_action, dtype=np.int8)
 
         return observation, info
 
@@ -69,6 +73,11 @@ class GymPettingZooEnv(gym.Env):
             observation = observation["observation"]
         elif self.shimmy and "action_mask" in info:
             self.action_mask = info["action_mask"]
+        else:
+            num_action = self.action_space.shape or self.action_space.n
+            self.action_mask = np.ones(num_action, dtype=np.int8)
+            # self.action_mask = [1] * num_action
+
 
         return observation, reward, termination, truncation, info
 
@@ -84,6 +93,11 @@ class GymPettingZooEnv(gym.Env):
                 observation = observation["observation"]
             elif self.shimmy and "action_mask" in info:
                 action_mask = info["action_mask"]
+            else:
+                action_space = self.petz_env.action_spaces[current_agent_string]
+                num_action = action_space.shape or self.action_space.n
+                action_mask = np.ones(num_action, dtype=np.int8)
+                # action_mask = [1] * num_action
 
             if termination or truncation:
                 action = None
