@@ -17,6 +17,11 @@
 import random
 import numpy as np
 import logging
+import pickle
+
+def save_pkl(path, data):
+  with open(path, 'wb') as file:
+    pickle.dump(data, file)
 
 
 #TODO: Check if these functions should be reproduced.

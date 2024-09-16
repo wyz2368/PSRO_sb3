@@ -23,7 +23,7 @@ class Mixnet_env(AECEnv):
     metadata = {"name": "mixnet_homo", "num_players": 2}
 
     def __init__(self,
-                 total_time_step=5,
+                 total_time_step=10,
                  render_mode=None):
 
         self.possible_agents = ["player_" + str(r) for r in range(2)] # P0: defender, P1: attacker
@@ -33,13 +33,13 @@ class Mixnet_env(AECEnv):
             zip(self.possible_agents, list(range(len(self.possible_agents))))
         )
 
-        self._action_spaces = {}
-        self._action_spaces["player_0"] = Box(0.0, 1.0, (6,), np.float32)
-        self._action_spaces["player_1"] = Box(0.0, 1.0, (6,), np.float32)
+        self.action_spaces = {}
+        self.action_spaces["player_0"] = Box(0.0, 1.0, (6,), np.float32) # 6 = 2 * 3
+        self.action_spaces["player_1"] = Box(0.0, 1.0, (6,), np.float32)
 
-        self._observation_spaces = {}
-        self._observation_spaces["player_0"] = Box(0, 1.0, (6,), np.float32)
-        self._observation_spaces["player_1"] = Box(0, 1.0, (6,), np.float32)
+        self.observation_spaces = {}
+        self.observation_spaces["player_0"] = Box(0.0, 1.0, (6,), np.float32)
+        self.observation_spaces["player_1"] = Box(0.0, 1.0, (6,), np.float32)
 
         self.total_time_steps = total_time_step
         self.graph = HOMOGraph(num_layers=3,
@@ -57,6 +57,8 @@ class Mixnet_env(AECEnv):
                             d_penalty=-50, # defender's penalty for insufficient usage
                             a_alpha=50000,  # coefficient for the reward
                             d_beta=50000,
+                            normal_nodes=np.array([0.8, 0.8, 0.8]),  # list of ratio of normal nodes
+                            compromised_nodes=np.array([0.1, 0.1, 0.1]),
                             seed=100)
 
 
@@ -106,17 +108,10 @@ class Mixnet_env(AECEnv):
             self.terminations[self.agent_selection]
             or self.truncations[self.agent_selection]
         ):
-            # handles stepping an agent which is already dead
-            # accepts a None action for the one agent, and moves the agent_selection to
-            # the next dead agent,  or if there are no more dead agents, to the next live agent
             self._was_dead_step(action)
             return
 
         agent = self.agent_selection
-
-        # the agent which stepped last had its _cumulative_rewards accounted for
-        # (because it was returned by last()), so the _cumulative_rewards for this
-        # agent should start again at 0
         self._cumulative_rewards[agent] = 0
 
         # stores action of current agent

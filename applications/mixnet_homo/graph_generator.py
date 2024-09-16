@@ -1,6 +1,8 @@
 import numpy as np
 import random
 
+def custom_random(x, y):
+    return random.sample(x, min(len(x), y))
 
 class HOMOGraph():
     def __init__(self,
@@ -22,6 +24,32 @@ class HOMOGraph():
                  normal_nodes=None, # list of ratio of normal nodes
                  compromised_nodes=None,
                  seed=None): # list of ratio of compromised nodes
+
+        """
+        Print parameters
+        """
+        print('num_layers:', num_layers)
+        print('num_nodes_per_layer:', num_nodes_per_layer)
+        print('false_alarm:', false_alarm)
+        print('false_negative:', false_negative)
+        print('a_attack_cost:', a_attack_cost)
+        print('a_deploy_cost:', a_deploy_cost)
+        print('a_maintain_cost:', a_maintain_cost)
+        print('active_rate:', active_rate)
+        print('d_exclude_cost:', d_exclude_cost)
+        print('d_deploy_cost:', d_deploy_cost)
+        print('d_maintain_cost:', d_maintain_cost)
+        print('usage_threshold:', usage_threshold)
+        print('d_penalty:', d_penalty)
+        print('a_alpha:', a_alpha)
+        print('d_beta:', d_beta)
+        print('normal_nodes:', normal_nodes)
+        print('compromised_nodes:', compromised_nodes)
+        print('seed:', seed)
+
+        """
+        End of printing.
+        """
 
         self.num_layers = num_layers
         self.num_nodes_per_layer = num_nodes_per_layer
@@ -88,8 +116,8 @@ class HOMOGraph():
             num_open_nodes = int(self.open_nodes[layer] * self.num_nodes_per_layer[layer])
             # print("num_open_nodes:", num_open_nodes)
             # Sample a set of nodes for each player and let defender's action override attacker's action.
-            att_deploy = set(random.sample(list(range(num_open_nodes)), int(num_open_nodes * att_actions[self.num_layers + layer])))
-            def_deploy = set(random.sample(list(range(num_open_nodes)), int(num_open_nodes * def_actions[self.num_layers + layer])))
+            att_deploy = set(custom_random(list(range(num_open_nodes)), int(num_open_nodes * att_actions[self.num_layers + layer])))
+            def_deploy = set(custom_random(list(range(num_open_nodes)), int(num_open_nodes * def_actions[self.num_layers + layer])))
             # print("att_deploy:", att_deploy)
             # print("def_deploy:", def_deploy)
 
@@ -106,11 +134,12 @@ class HOMOGraph():
 
             # print("3:", num_normal_nodes, num_active_nodes, num_att_deploy_nodes)
 
+
             att_compromised = set(
-                random.sample(list(range(num_active_nodes)), int(num_normal_nodes * att_actions[layer] * self.active_rate[layer] + self.num_nodes_per_layer[layer] * self.compromised_nodes[layer])))
+                custom_random(list(range(num_active_nodes)), int(num_normal_nodes * att_actions[layer] * self.active_rate[layer] + self.num_nodes_per_layer[layer] * self.compromised_nodes[layer])))
             def_exclude = set(
-                random.sample(list(range(num_active_nodes)), int(num_active_nodes * def_actions[layer])))
-            att_deploy = set(random.choices(list(att_compromised), k=num_att_deploy_nodes))
+                custom_random(list(range(num_active_nodes)), int(num_active_nodes * def_actions[layer])))
+            att_deploy = set(random.choices(list(att_compromised), k=min(len(att_compromised), num_att_deploy_nodes)))
 
             # print("att_compromised:", att_compromised)
             # print("def_exclude:", def_exclude)
@@ -126,6 +155,9 @@ class HOMOGraph():
 
             new_compromised_rate = att_compromised_rate + att_deploy_rate
             new_open_rate = self.open_nodes[layer] - att_deploy_rate - def_deploy_rate + def_exclude_rate
+            if new_open_rate + new_compromised_rate > 1:
+                new_open_rate = np.round(new_open_rate, 2)
+                new_compromised_rate = np.round(new_compromised_rate, 2)
             assert new_open_rate + new_compromised_rate <= 1
             new_normal_rate = 1 - new_open_rate - new_compromised_rate
 

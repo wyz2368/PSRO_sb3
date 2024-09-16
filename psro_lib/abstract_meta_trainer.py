@@ -49,6 +49,7 @@ def sample_episode(env, policies):
       else:
         action, _ = policies[agent_id].predict(observation)
 
+    # print("ACT:", action)
     env.step(action)
 
   return rewards

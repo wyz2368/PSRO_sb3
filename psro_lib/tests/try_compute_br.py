@@ -21,7 +21,7 @@ env.reset(seed=42)
 #                      sigma=0.0,
 #                      verbose=1)
 
-#TODO: add assert: non-mask env does not compatiable with maskppo.
+
 rl_oracle = RLOracle(env=env,
                      best_response_class=generate_agent_class(agent_name="MaskablePPO"),
                      best_response_kwargs={"policy": "MaskableActorCriticPolicy"},

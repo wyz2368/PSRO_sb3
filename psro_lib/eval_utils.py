@@ -21,6 +21,38 @@ def regret_of_last_iter(meta_games, meta_probs, expected_payoffs):
     return regrets
 
 
+def general_get_joint_strategy_from_marginals(probabilities):
+    """Returns a joint strategy matrix from a list of marginals.
+    Does not require marginals to have the same lengths.
+    Args:
+      probabilities: list of probabilities.
+
+    Returns:
+      A joint strategy from a list of marginals
+    """
+    joint = np.outer(probabilities[0], probabilities[1])
+    for i in range(len(probabilities) - 2):
+        joint = joint.reshape(tuple(list(joint.shape) + [1])) * probabilities[i + 2]
+    return joint
+
+def mixed_strategy_payoff(meta_games, probs):
+    """
+    A multiple player version of mixed strategy payoff writen below by yongzhao
+    The lenth of probs could be smaller than that of meta_games
+    """
+    assert len(meta_games) == len(probs),'number of player not equal'
+    for i in range(len(meta_games)):
+        assert len(probs[i]) <= meta_games[0].shape[i],'meta game should have larger dimension than marginal probability vector'
+    prob_matrix = general_get_joint_strategy_from_marginals(probs)
+    prob_slice = tuple([slice(prob_matrix.shape[i]) for i in range(len(meta_games))])
+    meta_game_copy = [ele[prob_slice] for ele in meta_games]
+    payoffs = []
+
+    for i in range(len(meta_games)):
+        payoffs.append(np.sum(meta_game_copy[i] * prob_matrix))
+    return payoffs
+
+
 
 def regret(meta_games, subgame_index, subgame_ne=None, start_index=0):
     """

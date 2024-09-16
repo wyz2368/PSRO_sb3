@@ -4,6 +4,9 @@ from pettingzoo.classic import tictactoe_v3
 from pettingzoo.classic import leduc_holdem_v4
 from pettingzoo.classic import rps_v2
 
+from applications.mixnet_homo.homo_mixnet_env import Mixnet_env
+
+
 def load_spiel_env(game_name):
     env = pyspiel.load_game(game_name)
     env = OpenSpielCompatibilityV0(env)
@@ -11,6 +14,7 @@ def load_spiel_env(game_name):
 
 
 GAMES = {
+    "mixnet_homo": Mixnet_env(),
     "rps_v2": rps_v2.env(),
     "tictactoe_v3": tictactoe_v3.env(),
     "leduc_holdem_v4": leduc_holdem_v4.env(),
