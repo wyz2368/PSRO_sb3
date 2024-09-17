@@ -166,7 +166,7 @@ def gpsro_looper(env, oracle, agents, writer, checkpoint_dir=None, seed=None):
             regrets = regret_of_last_iter(meta_game, stored_meta_probabilities, stored_expected_payoffs)
             logger.info(
                 "Regrets : {}".format(regrets))
-            writer.add_scalar('Sum of regrets', sum(regrets), gpsro_iteration)
+            writer.add_scalar('Sum_of_regrets', sum(regrets), gpsro_iteration)
 
         expected_payoffs = mixed_strategy_payoff(meta_game, meta_probabilities)
         # if gpsro_iteration + 2 in regret_time_stpes:
