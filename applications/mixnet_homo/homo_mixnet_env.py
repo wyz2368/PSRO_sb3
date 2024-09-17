@@ -59,7 +59,7 @@ class Mixnet_env(AECEnv):
                             d_beta=50000,
                             normal_nodes=np.array([0.8, 0.8, 0.8]),  # list of ratio of normal nodes
                             compromised_nodes=np.array([0.1, 0.1, 0.1]),
-                            seed=100)
+                            seed=None)
 
 
     @functools.lru_cache(maxsize=None)

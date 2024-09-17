@@ -156,8 +156,9 @@ class HOMOGraph():
             new_compromised_rate = att_compromised_rate + att_deploy_rate
             new_open_rate = self.open_nodes[layer] - att_deploy_rate - def_deploy_rate + def_exclude_rate
             if new_open_rate + new_compromised_rate > 1:
-                new_open_rate = np.round(new_open_rate, 2)
-                new_compromised_rate = np.round(new_compromised_rate, 2)
+                # print(new_open_rate, new_compromised_rate)
+                new_open_rate = np.round(new_open_rate, 5)
+                new_compromised_rate = np.round(new_compromised_rate, 5)
             assert new_open_rate + new_compromised_rate <= 1
             new_normal_rate = 1 - new_open_rate - new_compromised_rate
 

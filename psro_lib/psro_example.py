@@ -32,7 +32,7 @@ flags.DEFINE_integer("n_players", 2, "The number of players.")
 # PSRO related
 flags.DEFINE_string("meta_strategy_method", "nash",
                     "Name of meta strategy computation method.")
-flags.DEFINE_integer("sims_per_entry", 10,
+flags.DEFINE_integer("sims_per_entry", 5,
                      ("Number of simulations to run to estimate each element"
                       "of the game outcome matrix."))
 
