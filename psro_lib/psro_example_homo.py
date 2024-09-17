@@ -1,3 +1,20 @@
+import os
+import sys
+
+# Get the current script's directory
+current_dir = os.path.dirname(os.path.abspath(__file__))
+
+# Get the parent directory
+parent_dir = os.path.dirname(current_dir)
+
+# Get the grandparent directory
+grandparent_dir = os.path.dirname(parent_dir)
+
+# Add the grandparent directory to the sys.path
+sys.path.append(grandparent_dir)
+
+
+
 """
 Example running PSRO.
 """
