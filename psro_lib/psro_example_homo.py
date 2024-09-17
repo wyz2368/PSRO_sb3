@@ -165,21 +165,17 @@ def gpsro_looper(env, oracle, agents, writer, checkpoint_dir=None, seed=None):
         # Regret Measure
         if gpsro_iteration > 1:
             regrets = regret_of_last_iter(meta_game, stored_meta_probabilities, stored_expected_payoffs)
-            logger.info(
-                "Regrets : {}".format(regrets))
+            logger.info("Regrets : {}".format(regrets))
             writer.add_scalar('Sum_of_regrets', sum(regrets), gpsro_iteration)
 
         expected_payoffs = mixed_strategy_payoff(meta_game, meta_probabilities)
-        # if gpsro_iteration + 2 in regret_time_stpes:
         stored_meta_probabilities = meta_probabilities
         stored_expected_payoffs = expected_payoffs
 
-        # if gpsro_iteration + 1 in regret_time_stpes:
-        #     logger.info("Regrets : {}".format(regret_of_last_iter(meta_game, stored_meta_probabilities, stored_expected_payoffs)))
+
+        save_pkl(checkpoint_dir + "/meta_game.pkl", meta_game)
 
     meta_game = g_psro_solver.get_meta_game()
-    save_pkl(checkpoint_dir + "/meta_game.pkl", meta_game)
-
     all_ne = pygbt_solve_matrix_games(meta_game, method="enummixed", mode="all")
     for ne in all_ne:
         logger.info("===== Find all NE =====")
