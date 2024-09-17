@@ -35,6 +35,7 @@ from psro_lib.rl_agent_sb3.rl_factory import generate_agent_class
 from psro_lib.rl_agent_sb3.rl_oracle import RLOracle, freeze_all
 from psro_lib.utils import init_logger, save_pkl
 from psro_lib.eval_utils import regret_of_last_iter, mixed_strategy_payoff
+from solution_solvers.nash_solver.pygambit_solver import pygbt_solve_matrix_games
 
 
 FLAGS = flags.FLAGS
@@ -178,6 +179,14 @@ def gpsro_looper(env, oracle, agents, writer, checkpoint_dir=None, seed=None):
 
     meta_game = g_psro_solver.get_meta_game()
     save_pkl(checkpoint_dir + "/meta_game.pkl", meta_game)
+
+    all_ne = pygbt_solve_matrix_games(meta_game, method="enummixed", mode="all")
+    for ne in all_ne:
+        logger.info("===== Find all NE =====")
+        expected_payoffs = mixed_strategy_payoff(meta_game, ne)
+        logger.info("Nash Probabilities : {}".format(ne))
+        logger.info("Expected payoff : {}".format(expected_payoffs))
+
 
 
 def main(argv):
