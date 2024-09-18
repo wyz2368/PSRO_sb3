@@ -82,7 +82,7 @@ class RLOracle(optimization_oracle.AbstractOracle):
         # Create a DRL policy.
         # TODO: SAC may need action noise. Possibly callbacks.
         policy_arch = [self._best_response_kwargs["hidden_layers_sizes"]] * self._best_response_kwargs["hidden_layers"]
-        policy_kwargs = dict(net_arch=[dict(pi=policy_arch, vf=policy_arch)])
+        policy_kwargs = dict(net_arch=dict(pi=policy_arch, vf=policy_arch))
         nn = generate_agent_policy(self._best_response_kwargs["policy"])
         policy = self._best_response_class(policy=nn,
                                            env=self.gym_env,
