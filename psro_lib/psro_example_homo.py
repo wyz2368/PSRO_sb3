@@ -44,7 +44,7 @@ flags.DEFINE_string("game_name", "mixnet_homo", "Game names: kuhn_poker, tictact
 flags.DEFINE_integer("n_players", 2, "The number of players.")
 
 # PSRO related
-flags.DEFINE_string("meta_strategy_method", "prd",
+flags.DEFINE_string("meta_strategy_method", "nash",
                     "Name of meta strategy computation method.")
 flags.DEFINE_integer("sims_per_entry", 1000,
                      ("Number of simulations to run to estimate each element"

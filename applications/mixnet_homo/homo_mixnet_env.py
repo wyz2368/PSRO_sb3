@@ -55,7 +55,7 @@ class Mixnet_env(AECEnv):
                             d_maintain_cost=[-30, -30, -30],
                             usage_threshold=0.03, # the lower bound of usage without penalty
                             d_penalty=-50, # defender's penalty for insufficient usage
-                            a_alpha=50000,  # coefficient for the reward
+                            a_alpha=60000,  # coefficient for the reward
                             d_beta=50000,
                             normal_nodes=np.array([0.8, 0.8, 0.8]),  # list of ratio of normal nodes
                             compromised_nodes=np.array([0.1, 0.1, 0.1]),
