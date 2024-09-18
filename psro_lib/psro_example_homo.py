@@ -44,7 +44,7 @@ flags.DEFINE_string("game_name", "mixnet_homo", "Game names: kuhn_poker, tictact
 flags.DEFINE_integer("n_players", 2, "The number of players.")
 
 # PSRO related
-flags.DEFINE_string("meta_strategy_method", "nash",
+flags.DEFINE_string("meta_strategy_method", "prd",
                     "Name of meta strategy computation method.")
 flags.DEFINE_integer("sims_per_entry", 1000,
                      ("Number of simulations to run to estimate each element"
@@ -134,14 +134,11 @@ def gpsro_looper(env, oracle, agents, writer, checkpoint_dir=None, seed=None):
                             sims_per_entry=FLAGS.sims_per_entry,
                             meta_strategy_method=FLAGS.meta_strategy_method,
                             prd_iterations=int(1e5),  # 50000
-                            prd_gamma=1e-6,
+                            prd_gamma=1e-3,
                             sample_from_marginals=sample_from_marginals,
                             symmetric_game=FLAGS.symmetric_game,
                             checkpoint_dir=checkpoint_dir,
                             dummy_env=FLAGS.dummy_env)
-
-    # regret_time_stpes = [10, 15, 20, 25, 30, 35, 40, 45, 50]
-    regret_time_stpes = list(range(1, 10))
 
     start_time = time.time()
     for gpsro_iteration in range(1, FLAGS.gpsro_iterations + 1):
