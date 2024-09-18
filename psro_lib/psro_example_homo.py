@@ -165,8 +165,8 @@ def gpsro_looper(env, oracle, agents, writer, checkpoint_dir=None, seed=None):
             logger.info("Regrets : {}".format(regrets))
             writer.add_scalar('Sum_of_regrets', sum(regrets), gpsro_iteration)
 
-        expected_payoffs = mixed_strategy_payoff(meta_game, meta_probabilities)
-        stored_meta_probabilities = meta_probabilities
+        expected_payoffs = mixed_strategy_payoff(meta_game, nash_meta_probabilities)
+        stored_meta_probabilities = nash_meta_probabilities
         stored_expected_payoffs = expected_payoffs
 
 
