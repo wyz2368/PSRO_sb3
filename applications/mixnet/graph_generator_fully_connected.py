@@ -241,48 +241,13 @@ def generate_nodes(nodes_per_layer, loaded_params=None):
 
     return id_to_node, all_params
 
-def generate_adjacency_matrix(layer_sizes, link_probability):
-    """
-    Generate edges for mixnets.
-    :param layer_sizes: a list of numbers of nodes, one for each layer
-    :param link_probability: The probability of having a link between two nodes.
-    """
-    num_layers = len(layer_sizes)
-    total_nodes = sum(layer_sizes)
-
-    # Initialize adjacency matrix as a dictionary
-    adjacency_matrix = {i: [] for i in range(total_nodes)}
-
-    # Connect nodes between adjacent layers
-    for i in range(num_layers - 1):
-        current_layer_size = layer_sizes[i]
-        next_layer_size = layer_sizes[i + 1]
-        current_index = sum(layer_sizes[:i])
-        next_index = current_index + current_layer_size
-
-        for j in range(current_index, next_index):
-            # Connect each node to at least one node in the next layer
-            random_neighbor = np.random.randint(next_index, next_index + next_layer_size)
-            adjacency_matrix[j].append(random_neighbor)
-
-            # Randomly connect additional nodes based on link_probability
-            for k in range(next_index, next_index + next_layer_size):
-                if k != random_neighbor and np.random.rand() < link_probability:
-                    adjacency_matrix[j].append(k)
-
-            adjacency_matrix[j] = list(sorted(adjacency_matrix[j]))
-
-    return adjacency_matrix
-
 """
 Change the graph to a fully-connected one.
 """
 class Graph():
     def __init__(self,
-                 link_probability,
                  nodes_per_layer,
-                 params_path=None,
-                 adj_path=None):
+                 params_path=None):
         if params_path is not None:
             loaded_params = load_pkl(params_path)
             self.id_to_node, self.all_params = generate_nodes(nodes_per_layer=nodes_per_layer,
@@ -290,11 +255,6 @@ class Graph():
         else:
             self.id_to_node, self.all_params = generate_nodes(nodes_per_layer=nodes_per_layer)
 
-        if adj_path is not None:
-            self.adjacency_matrix = load_pkl(params_path)
-        else:
-            self.adjacency_matrix = generate_adjacency_matrix(layer_sizes=nodes_per_layer,
-                                                              link_probability=link_probability)
 
         # These sets store node_id that they control.
         self.def_control = set()
@@ -462,7 +422,6 @@ class Graph():
             self.id_to_node[id].state = -1
 
     def save_graph(self, path):
-        save_pkl(self.adjacency_matrix, path + "/adj.pkl")
         save_pkl(self.all_params, path + "/params.pkl")
 
 

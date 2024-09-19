@@ -49,8 +49,8 @@ class Mixnet_env(AECEnv):
                             a_attack_cost=[-400, -500, -400], # attacker's attacking cost
                             a_deploy_cost=[-200, -200, -200], # attacker's deployment cost
                             a_maintain_cost=[-50, -50, -50], # attacker's maintaining cost
-                            active_rate=[3.0, 2.0, 3.0], # the possibility of sucessfully activate a node
-                            d_exclude_cost=[-400, -400, -400], # defender's cost on excluding a node
+                            active_rate=[6.0, 4.0, 6.0], # the possibility of sucessfully activate a node
+                            d_exclude_cost=[-300, -300, -300], # defender's cost on excluding a node
                             d_deploy_cost=[-200, -200, -200], # defender's deployment cost
                             d_maintain_cost=[-30, -30, -30],
                             usage_threshold=0.03, # the lower bound of usage without penalty
