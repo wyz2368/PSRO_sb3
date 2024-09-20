@@ -24,5 +24,15 @@ from collections import deque
 #     print("***")
 
 
-a = [[123]]
-print(a * 2)
+def process_obs(observation, actions):
+    """
+    Add the action part to the observation.
+    """
+    result = np.concatenate((observation, actions))
+
+    return result
+
+obs = np.array([1,2,3])
+obs1 = np.array([1,2,3])
+
+print(process_obs(obs, obs1))

@@ -1,6 +1,6 @@
 import numpy as np
 import random
-from applications.mixnet.utils import load_pkl, save_pkl, compute_linkages
+from applications.mixnet.utils import load_pkl, save_pkl
 
 # Attacker's rewards/costs
 A_DEPLOY_COST_MIN = -2.0  # the cost of deploying a new server for the attacker
@@ -9,15 +9,11 @@ A_ATTACK_COST_MIN = -2.0  # the cost of attacking a node for the attacker
 A_ATTACK_COST_MAX = -10.0
 A_MAINTAIN_COST_MIN = -1.0  # the cost of maintaining a server for the attacker
 A_MAINTAIN_COST_MAX = -2.0
-A_LINK_REW_MIN = 10.0  # the reward of linking users for the attacker
-A_LINK_REW_MAX = 20.0
 # Defender's rewards/costs
 D_DEPLOY_COST_MIN = -2.0  # the cost of deploying a new server for the defender
 D_DEPLOY_COST_MAX = -5.0
 D_MAINTAIN_COST_MIN = -1.0  # the cost of maintaining a server for the defender
 D_MAINTAIN_COST_MAX = -2.0
-D_LINK_PENALTY_MIN = -10.0  # the penalty of having users linked for the defender
-D_LINK_PENALTY_MAX = -20.0
 D_USAGE_PENALTY_MIN = -20.0  # the penalty of not having enough paths for the defender
 D_USAGE_PENALTY_MAX = -30.0
 D_DEFEND_REW_MIN = 3.0  # the reward of successfully excluding a compromised node
@@ -39,16 +35,13 @@ class Node():
     def __init__(self,
                  id, # id of a node in the mixnet.
                  state=-1, # 0: controlled by the defender 1: controlled by the attacker -1:not deployed.
-                 control=-1,
                  # attacker's rewards/costs
                  a_deploy_cost=0.0, # the cost of deploying a new server for the attacker
                  a_attack_cost=0.0, # the cost of attacking a node for the attacker
                  a_maintain_cost=0.0, # the cost of maintaining a server for the attacker
-                 a_link_rew=0.0, # the reward of linking users for the attacker
                  # defender's rewards/costs
                  d_deploy_cost=0.0,  # the cost of deploying a new server for the defender
                  d_maintain_cost=0.0, # the cost of maintaining a server for the defender
-                 d_link_penalty=0.0, # the penalty of having users linked for the defender
                  d_usage_penalty=0.0, # the penalty of not having enough paths for the defender
                  d_defend_rew=0.0, # the reward of successfully excluding a compromised node
                  false_negative=1.0,  # prob of sending positive signal if node is active
@@ -58,21 +51,23 @@ class Node():
         # Properties of the node.
         self.id = id
         self.state = state
+        self.stored_initial_state = state
         # attacker's rewards/costs
         self.a_deploy_cost = a_deploy_cost  # the cost of deploying a new server for the attacker
         self.a_attack_cost = a_attack_cost  # the cost of attacking a node for the attacker
         self.a_maintain_cost = a_maintain_cost  # the cost of maintaining a server for the attacker
-        self.a_link_rew = a_link_rew  # the reward of linking users for the attacker
         # defender's rewards/costs
         self.d_deploy_cost = d_deploy_cost  # the cost of deploying a new server for the defender
         self.d_maintain_cost = d_maintain_cost  # the cost of maintaining a server for the defender
-        self.d_link_penalty = d_link_penalty  # the penalty of having users linked for the defender
         self.d_usage_penalty = d_usage_penalty  # the penalty of not having enough paths for the defender
         self.d_defend_rew = d_defend_rew  # the reward of successfully excluding a compromised node
         # Common probability distributions
         self.false_negative = false_negative
         self.false_alarm = false_alarm
         self.actProb = actProb
+
+    def reset(self):
+        self.state = self.stored_initial_state
 
     # Getter methods
     @property
@@ -195,11 +190,9 @@ def uniform_sampling_params():
     a_deploy_cost = random.uniform(A_DEPLOY_COST_MIN, A_DEPLOY_COST_MAX)
     a_attack_cost = random.uniform(A_ATTACK_COST_MIN, A_ATTACK_COST_MAX)
     a_maintain_cost = random.uniform(A_MAINTAIN_COST_MIN, A_MAINTAIN_COST_MAX)
-    a_link_rew = random.uniform(A_LINK_REW_MIN, A_LINK_REW_MAX)
     # Defender's rewards/costs
     d_deploy_cost = random.uniform(D_DEPLOY_COST_MIN, D_DEPLOY_COST_MAX)
     d_maintain_cost = random.uniform(D_MAINTAIN_COST_MIN, D_MAINTAIN_COST_MAX)
-    d_link_penalty = random.uniform(D_LINK_PENALTY_MIN, D_LINK_PENALTY_MAX)
     d_usage_penalty = random.uniform(D_USAGE_PENALTY_MIN, D_USAGE_PENALTY_MAX)
     d_defend_rew = random.uniform(D_DEFEND_REW_MIN, D_DEFEND_REW_MAX)
     # Noisy observations/attack success rate
@@ -212,10 +205,8 @@ def uniform_sampling_params():
         'a_deploy_cost': a_deploy_cost,
         'a_attack_cost': a_attack_cost,
         'a_maintain_cost': a_maintain_cost,
-        'a_link_rew': a_link_rew,
         'd_deploy_cost': d_deploy_cost,
         'd_maintain_cost': d_maintain_cost,
-        'd_link_penalty': d_link_penalty,
         'd_usage_penalty': d_usage_penalty,
         'd_defend_rew': d_defend_rew,
         'false_negative': false_negative,
@@ -228,7 +219,9 @@ def generate_nodes(nodes_per_layer, loaded_params=None):
     Generate nodes with sampled params.
     """
     id_to_node = {}
+    id_to_layer = {}
     all_params = []
+    cum_nodes = np.cumsum(nodes_per_layer)
     for id in range(sum(nodes_per_layer)):
         if loaded_params is None:
             params = uniform_sampling_params()
@@ -238,8 +231,11 @@ def generate_nodes(nodes_per_layer, loaded_params=None):
         params["id"] = id
         node = Node(**params)
         id_to_node[id] = node
+        for i, num in enumerate(cum_nodes):
+            if id < num:
+                id_to_layer[id] = i
 
-    return id_to_node, all_params
+    return id_to_node, id_to_layer, all_params
 
 """
 Change the graph to a fully-connected one.
@@ -247,14 +243,19 @@ Change the graph to a fully-connected one.
 class Graph():
     def __init__(self,
                  nodes_per_layer,
-                 params_path=None):
+                 params_path=None,
+                 alpha=5000,
+                 beta=5000,
+                 threshold=50625,
+                 traffic_penalty=-1e6):
         if params_path is not None:
             loaded_params = load_pkl(params_path)
-            self.id_to_node, self.all_params = generate_nodes(nodes_per_layer=nodes_per_layer,
+            self.id_to_node, self.id_to_layer, self.all_params = generate_nodes(nodes_per_layer=nodes_per_layer,
                                                                   loaded_params=loaded_params)
         else:
-            self.id_to_node, self.all_params = generate_nodes(nodes_per_layer=nodes_per_layer)
+            self.id_to_node, self.id_to_layer, self.all_params = generate_nodes(nodes_per_layer=nodes_per_layer)
 
+        self.nodes_per_layer = nodes_per_layer
 
         # These sets store node_id that they control.
         self.def_control = set()
@@ -262,7 +263,22 @@ class Graph():
         self.common_control = set()
 
         self.nodes_per_layer = nodes_per_layer
-        self.min_paths = 1
+        self.alpha = alpha
+        self.beta = beta
+        self.threshold = threshold
+        self.traffic_penalty = traffic_penalty
+
+        self.active_num_nodes_per_layer = [0] * len(nodes_per_layer)
+        self.deployed_num_nodes_per_layer = [0] * len(nodes_per_layer)
+
+        for id in self.id_to_layer:
+            node = self.id_to_node[id]
+            if node.state == 1:
+                self.active_num_nodes_per_layer[self.id_to_layer[id]] += 1
+                self.deployed_num_nodes_per_layer[self.id_to_layer[id]] += 1
+            elif node.state == 0:
+                self.deployed_num_nodes_per_layer[self.id_to_layer[id]] += 1
+
 
         self.state = []
         for id in range(self.get_num_nodes()):
@@ -271,6 +287,28 @@ class Graph():
             self.state.append(state)
 
         self.def_obs = []
+
+
+    def reset(self):
+        for id in range(self.get_num_nodes()):
+            node = self.id_to_node[id]
+            node.reset()
+
+        self.active_num_nodes_per_layer = [0] * len(self.nodes_per_layer)
+        self.deployed_num_nodes_per_layer = [0] * len(self.nodes_per_layer)
+
+        for id in self.id_to_layer:
+            node = self.id_to_node[id]
+            if node.state == 1:
+                self.active_num_nodes_per_layer[self.id_to_layer[id]] += 1
+                self.deployed_num_nodes_per_layer[self.id_to_layer[id]] += 1
+            elif node.state == 0:
+                self.deployed_num_nodes_per_layer[self.id_to_layer[id]] += 1
+
+        self.def_control = set()
+        self.att_control = set()
+        self.common_control = set()
+
 
     ############################## States ##############################
 
@@ -311,18 +349,12 @@ class Graph():
                 reward_att += node.a_maintain_cost
 
         # Success linkage of users.
-        att_paths = compute_linkages(self.nodes_per_layer, self.att_control, self.adjacency_matrix)
-        for path in att_paths:
-            node_id = path[-1]
-            node = self.id_to_node[node_id]
-            reward_att += node.a_link_rew
-            reward_def += node.d_link_penalty
+        reward_att += self.alpha * np.prod(self.active_num_nodes_per_layer)
+        reward_def += self.beta * np.prod(self.active_num_nodes_per_layer)
 
         # Without usage penalty.
-        if len(att_paths) == 0:
-            all_paths = compute_linkages(self.nodes_per_layer, self.att_control.union(self.def_control), self.adjacency_matrix)
-            if len(all_paths) <= self.min_paths: # Assume min_paths <= total_paths.
-                reward_def += self.id_to_node[0].d_usage_penalty # Fix the penalty to be that of the node 0.
+        if np.prod(self.deployed_num_nodes_per_layer) < self.threshold:
+            reward_def += self.traffic_penalty
 
         # Update observations
         self.update_graph_state()
@@ -341,14 +373,18 @@ class Graph():
             node.set_state(0)
             self.def_control.add(node_id)
             rew += node.d_deploy_cost
+            self.deployed_num_nodes_per_layer[self.id_to_layer[node_id]] += 1
         else:
             if node_id in self.att_control:
                 rew += node.d_defend_rew
                 self.att_control.remove(node_id)
+                self.active_num_nodes_per_layer[self.id_to_layer[node_id]] -= 1
             if node_id in self.def_control:
                 self.def_control.remove(node_id)
             if node_id in self.common_control:
                 self.common_control.remove(node_id)
+
+            self.deployed_num_nodes_per_layer[self.id_to_layer[node_id]] -= 1
             node.set_state(-1)
 
         return rew
@@ -364,6 +400,8 @@ class Graph():
             if node_id in valid_att_actions:
                 node.set_state(1)
                 self.att_control.add(node_id)
+                self.active_num_nodes_per_layer[self.id_to_layer[node_id]] += 1
+                self.deployed_num_nodes_per_layer[self.id_to_layer[node_id]] += 1
             rew += node.a_deploy_cost
         elif state == 0:
             rew += node.a_attack_cost
@@ -371,11 +409,12 @@ class Graph():
                 node.set_state(1)
                 self.att_control.add(node_id)
                 self.common_control.add(node_id)
-        else:
-            # should add a hard constraint to disallow attacker to shut down defender's node.
-            if node_id in self.att_control and node_id not in self.common_control and node_id in valid_att_actions: # Duo protection.
-                node.set_state(-1)
-                self.att_control.remove(node_id)
+                self.active_num_nodes_per_layer[self.id_to_layer[node_id]] += 1
+        # else:
+        #     # should add a hard constraint to disallow attacker to shut down defender's node.
+        #     if node_id in self.att_control and node_id not in self.common_control and node_id in valid_att_actions: # Duo protection.
+        #         node.set_state(-1)
+        #         self.att_control.remove(node_id)
 
         return rew
 
