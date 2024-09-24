@@ -1,7 +1,7 @@
 import functools
 
 import numpy as np
-from gymnasium.spaces import MultiBinary, MultiDiscrete
+from gymnasium.spaces import MultiDiscrete, Discrete
 
 from pettingzoo import AECEnv
 from pettingzoo.utils import agent_selector, wrappers
@@ -52,12 +52,12 @@ class Mixnet_env(AECEnv):
 
         #TODO: Change this when we add new actions
         self.action_spaces = {}
-        self.action_spaces["player_1"] = MultiBinary(self.num_nodes + 1)
-        self.action_spaces["player_2"] = MultiBinary(self.num_nodes + 1)
+        self.action_spaces["player_0"] = Discrete(self.num_nodes + 1)
+        self.action_spaces["player_1"] = Discrete(self.num_nodes + 1)
 
         self.observation_spaces = {}
+        self.observation_spaces["player_0"] = MultiDiscrete([3 for _ in range(self.num_nodes)] + [2 for _ in range(self.num_nodes)])
         self.observation_spaces["player_1"] = MultiDiscrete([3 for _ in range(self.num_nodes)] + [2 for _ in range(self.num_nodes)])
-        self.observation_spaces["player_2"] = MultiDiscrete([3 for _ in range(self.num_nodes)] + [2 for _ in range(self.num_nodes)])
 
         self.graph = Graph(nodes_per_layer=[25, 25, 25, 25])
 
@@ -70,7 +70,7 @@ class Mixnet_env(AECEnv):
     # If your spaces change over time, remove this line (disable caching).
     @functools.lru_cache(maxsize=None)
     def action_space(self, agent):
-        return MultiBinary(self.num_nodes)
+        return Discrete(self.num_nodes + 1)
 
     def render(self):
         pass

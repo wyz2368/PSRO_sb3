@@ -3,28 +3,28 @@ import random
 from applications.mixnet.utils import load_pkl, save_pkl
 
 # Attacker's rewards/costs
-A_DEPLOY_COST_MIN = -2.0  # the cost of deploying a new server for the attacker
-A_DEPLOY_COST_MAX = -5.0
-A_ATTACK_COST_MIN = -2.0  # the cost of attacking a node for the attacker
-A_ATTACK_COST_MAX = -10.0
-A_MAINTAIN_COST_MIN = -1.0  # the cost of maintaining a server for the attacker
-A_MAINTAIN_COST_MAX = -2.0
+A_DEPLOY_COST_MIN = -100.0  # the cost of deploying a new server for the attacker
+A_DEPLOY_COST_MAX = -300.0
+A_ATTACK_COST_MIN = -300.0  # the cost of attacking a node for the attacker
+A_ATTACK_COST_MAX = -600.0
+A_MAINTAIN_COST_MIN = -10.0  # the cost of maintaining a server for the attacker
+A_MAINTAIN_COST_MAX = -100.0
 # Defender's rewards/costs
-D_DEPLOY_COST_MIN = -2.0  # the cost of deploying a new server for the defender
-D_DEPLOY_COST_MAX = -5.0
-D_MAINTAIN_COST_MIN = -1.0  # the cost of maintaining a server for the defender
-D_MAINTAIN_COST_MAX = -2.0
+D_DEPLOY_COST_MIN = -100.0  # the cost of deploying a new server for the defender
+D_DEPLOY_COST_MAX = -300.0
+D_MAINTAIN_COST_MIN = -10.0  # the cost of maintaining a server for the defender
+D_MAINTAIN_COST_MAX = -100.0
 D_USAGE_PENALTY_MIN = -20.0  # the penalty of not having enough paths for the defender
-D_USAGE_PENALTY_MAX = -30.0
-D_DEFEND_REW_MIN = 3.0  # the reward of successfully excluding a compromised node
-D_DEFEND_REW_MAX = 6.0
+D_USAGE_PENALTY_MAX = -70.0
+D_DEFEND_REW_MIN = 30.0  # the reward of successfully excluding a compromised node
+D_DEFEND_REW_MAX = 100.0
 # Noisy observations/attack success rate
 FALSE_NEGATIVE_MIN = 0.1  # prob of sending positive signal if node is active
-FALSE_NEGATIVE_MAX = 0.4
-FALSE_ALARM_MIN = 0.1  # prob of sending positive signal if node is inactive(false alarm)
-FALSE_ALARM_MAX = 0.4
-ACTPROB_MIN = 0.1
-ACTPROB_MAX = 0.9
+FALSE_NEGATIVE_MAX = 0.3
+FALSE_ALARM_MIN = 0.2  # prob of sending positive signal if node is inactive(false alarm)
+FALSE_ALARM_MAX = 0.6
+ACTPROB_MIN = 0.2
+ACTPROB_MAX = 0.4
 
 
 
@@ -185,7 +185,8 @@ class Node():
 
 
 def uniform_sampling_params():
-    state = random.choices([-1,0,1], weights = [6, 0, 0])[0]
+    state = random.choices([-1,0,1], weights = [0, 0, 4])[0]
+
     # Attacker's rewards/costs
     a_deploy_cost = random.uniform(A_DEPLOY_COST_MIN, A_DEPLOY_COST_MAX)
     a_attack_cost = random.uniform(A_ATTACK_COST_MIN, A_ATTACK_COST_MAX)
@@ -234,6 +235,7 @@ def generate_nodes(nodes_per_layer, loaded_params=None):
         for i, num in enumerate(cum_nodes):
             if id < num:
                 id_to_layer[id] = i
+                break
 
     return id_to_node, id_to_layer, all_params
 
@@ -244,10 +246,10 @@ class Graph():
     def __init__(self,
                  nodes_per_layer,
                  params_path=None,
-                 alpha=5000,
-                 beta=5000,
-                 threshold=50625,
-                 traffic_penalty=-1e6):
+                 alpha=1,
+                 beta=1,
+                 threshold=50625, #50625
+                 traffic_penalty=-1e4):
         if params_path is not None:
             loaded_params = load_pkl(params_path)
             self.id_to_node, self.id_to_layer, self.all_params = generate_nodes(nodes_per_layer=nodes_per_layer,
@@ -255,9 +257,11 @@ class Graph():
         else:
             self.id_to_node, self.id_to_layer, self.all_params = generate_nodes(nodes_per_layer=nodes_per_layer)
 
+
         self.nodes_per_layer = nodes_per_layer
 
         # These sets store node_id that they control.
+        #TODO: This does not initialize based on node generation
         self.def_control = set()
         self.att_control = set()
         self.common_control = set()
@@ -274,9 +278,11 @@ class Graph():
         for id in self.id_to_layer:
             node = self.id_to_node[id]
             if node.state == 1:
+                self.att_control.add(id)
                 self.active_num_nodes_per_layer[self.id_to_layer[id]] += 1
                 self.deployed_num_nodes_per_layer[self.id_to_layer[id]] += 1
             elif node.state == 0:
+                self.def_control.add(id)
                 self.deployed_num_nodes_per_layer[self.id_to_layer[id]] += 1
 
 
@@ -350,9 +356,10 @@ class Graph():
 
         # Success linkage of users.
         reward_att += self.alpha * np.prod(self.active_num_nodes_per_layer)
-        reward_def += self.beta * np.prod(self.active_num_nodes_per_layer)
+        reward_def -= self.beta * np.prod(self.active_num_nodes_per_layer)
 
         # Without usage penalty.
+        #TODO: the threshold and the penality should be adjusted adaptively.
         if np.prod(self.deployed_num_nodes_per_layer) < self.threshold:
             reward_def += self.traffic_penalty
 
@@ -410,6 +417,8 @@ class Graph():
                 self.att_control.add(node_id)
                 self.common_control.add(node_id)
                 self.active_num_nodes_per_layer[self.id_to_layer[node_id]] += 1
+        else:
+            rew += node.a_deploy_cost
         # else:
         #     # should add a hard constraint to disallow attacker to shut down defender's node.
         #     if node_id in self.att_control and node_id not in self.common_control and node_id in valid_att_actions: # Duo protection.

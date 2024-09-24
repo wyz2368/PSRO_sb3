@@ -30,27 +30,65 @@ def sample_episode(env, policies):
   rewards = np.zeros(len(env.possible_agents))
 
   env.reset()
-  for agent in env.agent_iter():
-    agent_id = name_to_id[agent]
-    observation, reward, termination, truncation, info = env.last()
-    rewards[agent_id] += reward
 
-    if termination or truncation:
-      action = None
-    else:
-      if isinstance(env, OpenSpielCompatibilityV0):
-        action_mask = info["action_mask"]
-        observation = observation["observation"]
-        action, _ = policies[agent_id].predict(observation, action_masks=action_mask)
-      elif isinstance(observation, dict):
-        action_mask = observation["action_mask"]
-        observation = observation["observation"]
-        action, _ = policies[agent_id].predict(observation, action_masks=action_mask)
+  if env.metadata["name"] == "mixnet":
+    for agent in env.agent_iter():
+      agent_id = name_to_id[agent]
+      observation, reward, termination, truncation, info = env.last()
+      rewards[agent_id] += reward
+
+      num_action = env.action_spaces[agent].shape or env.action_spaces[agent].n
+      num_obs = env.observation_spaces[agent].shape or env.observation_spaces[agent].n
+      combinatorial_action = np.concatenate((observation, np.zeros(num_action - 1)))
+
+      while True:
+        if termination or truncation:
+          action = None
+        else:
+          if isinstance(env, OpenSpielCompatibilityV0):
+            action_mask = info["action_mask"]
+            observation = observation["observation"]
+            action, _ = policies[agent_id].predict(observation, action_masks=action_mask)
+          elif isinstance(observation, dict):
+            action_mask = observation["action_mask"]
+            observation = observation["observation"]
+            action, _ = policies[agent_id].predict(observation, action_masks=action_mask)
+          else:
+            action, _ = policies[agent_id].predict(observation)
+
+        if action == num_action - 1 or action == None or combinatorial_action[num_obs + action] == 1:
+          break
+        else:
+          combinatorial_action[num_obs + action] = 1
+
+      # print("ACT:", action)
+      env.step(combinatorial_action[num_obs:])
+
+
+
+
+  else:
+    for agent in env.agent_iter():
+      agent_id = name_to_id[agent]
+      observation, reward, termination, truncation, info = env.last()
+      rewards[agent_id] += reward
+
+      if termination or truncation:
+        action = None
       else:
-        action, _ = policies[agent_id].predict(observation)
+        if isinstance(env, OpenSpielCompatibilityV0):
+          action_mask = info["action_mask"]
+          observation = observation["observation"]
+          action, _ = policies[agent_id].predict(observation, action_masks=action_mask)
+        elif isinstance(observation, dict):
+          action_mask = observation["action_mask"]
+          observation = observation["observation"]
+          action, _ = policies[agent_id].predict(observation, action_masks=action_mask)
+        else:
+          action, _ = policies[agent_id].predict(observation)
 
-    # print("ACT:", action)
-    env.step(action)
+      # print("ACT:", action)
+      env.step(action)
 
   return rewards
 

@@ -6,32 +6,45 @@ from pettingzoo.classic import rps_v2, tictactoe_v3
 from psro_lib.rl_agent_sb3.random_policy import RandomPolicy
 from psro_lib.rl_agent_sb3.rl_factory import generate_agent_class
 from shimmy.openspiel_compatibility import OpenSpielCompatibilityV0
+from psro_lib.game_factory import get_env_factory
+from psro_lib.rl_agent_sb3.special_policies import DeployPolicy, FullDefensePolicy, ExcludePolicy
 
 
 from psro_lib.rl_agent_sb3.rl_oracle import RLOracle
 
-env = rps_v2.env()
+# env = rps_v2.env()
 # env = tictactoe_v3.env()
-env.reset(seed=42)
+# env.reset(seed=42)
+
+env = get_env_factory("mixnet_homo")()
+env.reset()
 #
+
+
+br_args = {
+        "policy": "MlpPolicy",
+        "hidden_layers_sizes": 256,
+        "hidden_layers": 4}
+
+rl_oracle = RLOracle(env=env,
+                     best_response_class=generate_agent_class(agent_name="PPO"),
+                     best_response_kwargs=br_args,
+                     total_timesteps=100000,
+                     sigma=0.0,
+                     verbose=0)
+
+
 # rl_oracle = RLOracle(env=env,
-#                      best_response_class=generate_agent_class(agent_name="DQN"),
-#                      best_response_kwargs={"policy": "MlpPolicy"},
+#                      best_response_class=generate_agent_class(agent_name="MaskablePPO"),
+#                      best_response_kwargs={"policy": "MaskableActorCriticPolicy"},
 #                      total_timesteps=1000,
 #                      sigma=0.0,
 #                      verbose=1)
 
 
-rl_oracle = RLOracle(env=env,
-                     best_response_class=generate_agent_class(agent_name="MaskablePPO"),
-                     best_response_kwargs={"policy": "MaskableActorCriticPolicy"},
-                     total_timesteps=1000,
-                     sigma=0.0,
-                     verbose=1)
 
-
-
-old_policies = [[RandomPolicy(env=env, agent_id=0)], [RandomPolicy(env=env, agent_id=1)]]
+# old_policies = [[ExcludePolicy(env=env, agent_id=0)], [ExcludePolicy(env=env, agent_id=1)]]
+old_policies = [[FullDefensePolicy(env=env, agent_id=0)], [FullDefensePolicy(env=env, agent_id=1)]]
 meta_probabilities = [[1.0], [1.0]]
 
 
@@ -48,7 +61,12 @@ def sample_episode(env, policies):
   rewards = np.zeros(len(env.possible_agents))
 
   env.reset()
+  average_action = {}
+  average_action["player_0"] = []
+  average_action["player_1"] = []
   for agent in env.agent_iter():
+    print("----------------")
+    print("Agent:", agent)
     agent_id = name_to_id[agent]
     observation, reward, termination, truncation, info = env.last()
     # print("obs:", observation)
@@ -60,16 +78,20 @@ def sample_episode(env, policies):
         if isinstance(env, OpenSpielCompatibilityV0):
             action_mask = info["action_mask"]
             observation = observation["observation"]
-            action, _ = policies[agent_id].predict(observation, action_masks=action_mask)
+            action, _ = policies[agent_id][0].predict(observation, action_masks=action_mask)
         elif isinstance(observation, dict):
             action_mask = observation["action_mask"]
             observation = observation["observation"]
-            action, _ = policies[agent_id].predict(observation, action_masks=action_mask)
+            action, _ = policies[agent_id][0].predict(observation, action_masks=action_mask)
         else:
-            action, _ = policies[agent_id].predict(observation)
+            action, _ = policies[agent_id][0].predict(observation)
 
+    print("Action:", action)
+    average_action[agent].append(action)
     env.step(action)
 
+  # print("DEF:", np.mean(average_action["player_0"], axis=0))
+  # print("ATT:", np.mean(average_action["player_1"], axis=0))
   return rewards
 
 

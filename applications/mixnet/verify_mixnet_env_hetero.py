@@ -7,6 +7,8 @@ def run_env():
     env1 = env
     env1.reset()
 
+    print(env.action_spaces)
+
     i = 1
     for agent in env1.agent_iter():
         print("--{}--".format(i))

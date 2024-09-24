@@ -62,7 +62,7 @@ class GymPettingZooEnv(gym.Env):
             self.action_mask = np.ones(num_action, dtype=np.int8)
 
         num_action = self.action_space.shape or self.action_space.n
-        self.combinatoral_action = np.zeros(num_action-1)
+        self.combinatoral_action = self.process_obs(observation, np.zeros(num_action - 1))
 
         return observation, info
 
@@ -78,7 +78,7 @@ class GymPettingZooEnv(gym.Env):
         # The learning player takes an action.
         num_action = self.action_space.shape or self.action_space.n
         num_obs = self.observation_space.shape or self.observation_space.n
-        if action == num_action - 1:
+        if action == num_action - 1 or self.combinatoral_action[num_obs + action] == 1:
             self.petz_env.step(self.combinatoral_action[num_obs:])
             self.run_until_the_learning_player()
             observation, reward, termination, truncation, info = self.petz_env.last()
@@ -99,6 +99,9 @@ class GymPettingZooEnv(gym.Env):
     def run_until_the_learning_player(self):
         # The step function changes the current player, so retrive current player again.
         current_agent_string = self.petz_env.agent_selection
+        num_action = self.action_space.shape or self.action_space.n
+        num_obs = self.observation_space.shape or self.observation_space.n
+
         # run until the learning agent arrives again.
         while current_agent_string != self.learning_player_string:
             observation, reward, termination, truncation, info = self.petz_env.last()
@@ -112,27 +115,36 @@ class GymPettingZooEnv(gym.Env):
                 num_action = action_space.shape or self.action_space.n
                 action_mask = np.ones(num_action, dtype=np.int8)
 
-            if termination or truncation:
-                action = None
-            else:
-                if self.old_policies is not None:
-                    current_agent_idx = self.agent_idx[current_agent_string]
-                    current_policy = self.sampled_policies[current_agent_idx]
-                    if self.obs_dict_flag:
-                        action, _ = current_policy.predict(observation, action_masks=action_mask)
-                    elif self.shimmy and "action_mask" in info:
-                        action, _ = current_policy.predict(observation, action_masks=action_mask)
-                    else:
-                        action, _ = current_policy.predict(observation)
+            combinatorial_action = self.process_obs(observation, np.zeros(num_action - 1))
+
+            while True:
+                if termination or truncation:
+                    action = None
                 else:
-                    # If policies are not specified, then randomly sample an action.
-                    if self.obs_dict_flag:
-                        action = self.petz_env.action_space(current_agent_string).sample(action_mask)
-                    elif self.shimmy and "action_mask" in info:
-                        action = self.petz_env.action_space(current_agent_string).sample(action_mask)
+                    if self.old_policies is not None:
+                        current_agent_idx = self.agent_idx[current_agent_string]
+                        current_policy = self.sampled_policies[current_agent_idx]
+                        if self.obs_dict_flag:
+                            action, _ = current_policy.predict(observation, action_masks=action_mask)
+                        elif self.shimmy and "action_mask" in info:
+                            action, _ = current_policy.predict(observation, action_masks=action_mask)
+                        else:
+                            action, _ = current_policy.predict(observation)
                     else:
-                        action = self.petz_env.action_space(current_agent_string).sample()
-            self.petz_env.step(action)
+                        # If policies are not specified, then randomly sample an action.
+                        if self.obs_dict_flag:
+                            action = self.petz_env.action_space(current_agent_string).sample(action_mask)
+                        elif self.shimmy and "action_mask" in info:
+                            action = self.petz_env.action_space(current_agent_string).sample(action_mask)
+                        else:
+                            action = self.petz_env.action_space(current_agent_string).sample()
+
+                if action == num_action - 1 or action == None or combinatorial_action[num_obs + action] == 1:
+                    break
+                else:
+                    combinatorial_action[num_obs + action] = 1
+
+            self.petz_env.step(combinatorial_action[num_obs:])
             current_agent_string = self.petz_env.agent_selection
 
 

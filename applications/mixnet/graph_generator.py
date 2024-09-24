@@ -297,6 +297,7 @@ class Graph():
                                                               link_probability=link_probability)
 
         # These sets store node_id that they control.
+        # TODO: This does not initialize based on node generation
         self.def_control = set()
         self.att_control = set()
         self.common_control = set()

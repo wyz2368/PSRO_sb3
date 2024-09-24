@@ -9,6 +9,7 @@ from sb3_contrib.common.wrappers import ActionMasker
 from stable_baselines3.common.callbacks import EvalCallback
 
 from psro_lib.wrappers.gym_wrapper import GymPettingZooEnv
+from psro_lib.wrappers.gym_wrapper_recursive import GymPettingZooEnv as GymPettingZooEnv_recursive
 from psro_lib.rl_agent_sb3.rl_factory import generate_agent_policy
 from sb3_contrib import MaskablePPO
 
@@ -44,8 +45,10 @@ class RLOracle(optimization_oracle.AbstractOracle):
     Init function for the RLOracle.
     """
     self.env = env
-    self.gym_env = GymPettingZooEnv(petz_env=env,
-                                    learning_player_id=0)
+    if self.env.metadata["name"] == "mixnet":
+      self.gym_env = GymPettingZooEnv_recursive(petz_env=env, learning_player_id=0)
+    else:
+      self.gym_env = GymPettingZooEnv(petz_env=env, learning_player_id=0)
 
 
     self.num_players = len(env.agents)
