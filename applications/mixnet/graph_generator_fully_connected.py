@@ -3,15 +3,15 @@ import random
 from applications.mixnet.utils import load_pkl, save_pkl
 
 # Attacker's rewards/costs
-A_DEPLOY_COST_MIN = -100.0  # the cost of deploying a new server for the attacker
-A_DEPLOY_COST_MAX = -300.0
-A_ATTACK_COST_MIN = -300.0  # the cost of attacking a node for the attacker
-A_ATTACK_COST_MAX = -600.0
+A_DEPLOY_COST_MIN = -10.0  # the cost of deploying a new server for the attacker
+A_DEPLOY_COST_MAX = -30.0
+A_ATTACK_COST_MIN = -30.0  # the cost of attacking a node for the attacker
+A_ATTACK_COST_MAX = -60.0
 A_MAINTAIN_COST_MIN = -10.0  # the cost of maintaining a server for the attacker
 A_MAINTAIN_COST_MAX = -100.0
 # Defender's rewards/costs
-D_DEPLOY_COST_MIN = -100.0  # the cost of deploying a new server for the defender
-D_DEPLOY_COST_MAX = -300.0
+D_DEPLOY_COST_MIN = -10.0  # the cost of deploying a new server for the defender
+D_DEPLOY_COST_MAX = -30.0
 D_MAINTAIN_COST_MIN = -10.0  # the cost of maintaining a server for the defender
 D_MAINTAIN_COST_MAX = -100.0
 D_USAGE_PENALTY_MIN = -20.0  # the penalty of not having enough paths for the defender
@@ -248,12 +248,11 @@ class Graph():
                  params_path=None,
                  alpha=1,
                  beta=1,
-                 threshold=50625, #50625
-                 traffic_penalty=-1e4):
+                 threshold=27,
+                 traffic_penalty=-1e3):
         if params_path is not None:
             loaded_params = load_pkl(params_path)
-            self.id_to_node, self.id_to_layer, self.all_params = generate_nodes(nodes_per_layer=nodes_per_layer,
-                                                                  loaded_params=loaded_params)
+            self.id_to_node, self.id_to_layer, self.all_params = generate_nodes(nodes_per_layer=nodes_per_layer, loaded_params=loaded_params)
         else:
             self.id_to_node, self.id_to_layer, self.all_params = generate_nodes(nodes_per_layer=nodes_per_layer)
 
@@ -261,7 +260,6 @@ class Graph():
         self.nodes_per_layer = nodes_per_layer
 
         # These sets store node_id that they control.
-        #TODO: This does not initialize based on node generation
         self.def_control = set()
         self.att_control = set()
         self.common_control = set()
@@ -310,6 +308,8 @@ class Graph():
                 self.deployed_num_nodes_per_layer[self.id_to_layer[id]] += 1
             elif node.state == 0:
                 self.deployed_num_nodes_per_layer[self.id_to_layer[id]] += 1
+
+        self.update_graph_state()
 
         self.def_control = set()
         self.att_control = set()

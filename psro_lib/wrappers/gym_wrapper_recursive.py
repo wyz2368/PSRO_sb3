@@ -64,7 +64,7 @@ class GymPettingZooEnv(gym.Env):
         num_action = self.action_space.shape or self.action_space.n
         self.combinatoral_action = self.process_obs(observation, np.zeros(num_action - 1))
 
-        return observation, info
+        return self.combinatoral_action, info
 
     def process_obs(self, observation, actions):
         """
@@ -74,12 +74,16 @@ class GymPettingZooEnv(gym.Env):
 
         return result
 
-    def step(self, action):
+    def step(self, action): #TODO: how to deal with None?
         # The learning player takes an action.
         num_action = self.action_space.shape or self.action_space.n
         num_obs = self.observation_space.shape or self.observation_space.n
-        if action == num_action - 1 or self.combinatoral_action[num_obs + action] == 1:
-            self.petz_env.step(self.combinatoral_action[num_obs:])
+        if action < num_action - 1 and self.combinatoral_action[int(num_obs[0]/2) + action] == 1:
+            repeated_action = True
+        else:
+            repeated_action = False
+        if action == num_action - 1 or repeated_action:
+            self.petz_env.step(self.combinatoral_action[int(num_obs[0]/2):])
             self.run_until_the_learning_player()
             observation, reward, termination, truncation, info = self.petz_env.last()
             if self.obs_dict_flag: # Assume action_mask is in obs when obs is a dict.
@@ -91,9 +95,9 @@ class GymPettingZooEnv(gym.Env):
                 self.action_mask = np.ones(num_action, dtype=np.int8)
 
             self.combinatoral_action = self.process_obs(observation, np.zeros(num_action - 1))
-            return observation, reward, termination, truncation, info
+            return self.combinatoral_action, reward/10, termination, truncation, info
         else:
-            self.combinatoral_action[num_obs + action] = 1
+            self.combinatoral_action[int(num_obs[0]/2) + action] = 1
             return self.combinatoral_action, 0, False, False, {}
 
     def run_until_the_learning_player(self):
@@ -120,6 +124,7 @@ class GymPettingZooEnv(gym.Env):
             while True:
                 if termination or truncation:
                     action = None
+                    break
                 else:
                     if self.old_policies is not None:
                         current_agent_idx = self.agent_idx[current_agent_string]
@@ -129,7 +134,7 @@ class GymPettingZooEnv(gym.Env):
                         elif self.shimmy and "action_mask" in info:
                             action, _ = current_policy.predict(observation, action_masks=action_mask)
                         else:
-                            action, _ = current_policy.predict(observation)
+                            action, _ = current_policy.predict(combinatorial_action)
                     else:
                         # If policies are not specified, then randomly sample an action.
                         if self.obs_dict_flag:
@@ -139,12 +144,17 @@ class GymPettingZooEnv(gym.Env):
                         else:
                             action = self.petz_env.action_space(current_agent_string).sample()
 
-                if action == num_action - 1 or action == None or combinatorial_action[num_obs + action] == 1:
+                if action == num_action - 1 or action == None:
+                    break
+                elif combinatorial_action[int(num_obs[0]/2) + action] == 1:
                     break
                 else:
-                    combinatorial_action[num_obs + action] = 1
+                    combinatorial_action[int(num_obs[0]/2) + action] = 1
 
-            self.petz_env.step(combinatorial_action[num_obs:])
+            if action is None:
+                self.petz_env.step(action)
+            else:
+                self.petz_env.step(combinatorial_action[int(num_obs[0]/2):])
             current_agent_string = self.petz_env.agent_selection
 
 

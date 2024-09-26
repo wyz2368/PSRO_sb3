@@ -199,7 +199,7 @@ class HOMOGraph():
         # Update observations
         self.update_graph_state()
 
-        return self.get_def_observation(), self.get_att_observation(), reward_def, reward_att, self.get_graph_state()
+        return self.get_def_observation(), self.get_att_observation(), reward_def/10, reward_att/10, self.get_graph_state()
 
 
     def update_graph_state(self):

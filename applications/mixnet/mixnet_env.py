@@ -1,7 +1,7 @@
 import functools
 
 import numpy as np
-from gymnasium.spaces import MultiDiscrete, Discrete
+from gymnasium.spaces import MultiDiscrete, Discrete, Box
 
 from pettingzoo import AECEnv
 from pettingzoo.utils import agent_selector, wrappers
@@ -34,21 +34,17 @@ class Mixnet_env(AECEnv):
     metadata = {"name": "mixnet", "num_players": 2}
 
     def __init__(self,
-                 num_nodes=100,
-                 num_time_steps=20,
-                 render_mode=None,
-                 instance_path="./instances/net1.pkl"):
+                 num_nodes=30,
+                 num_time_steps=10,
+                 render_mode=None):
 
         self.possible_agents = ["player_" + str(r) for r in range(2)] # P1: defender, P2: attacker
-        self.num_time_steps = num_time_steps
+        self.total_time_steps = num_time_steps
         self.num_nodes = num_nodes
-        self.instance_path = instance_path
         self.render_mode = render_mode
 
         # optional: a mapping between agent name and ID
-        self.agent_name_mapping = dict(
-            zip(self.possible_agents, list(range(len(self.possible_agents))))
-        )
+        self.agent_name_mapping = dict(zip(self.possible_agents, list(range(len(self.possible_agents)))))
 
         #TODO: Change this when we add new actions
         self.action_spaces = {}
@@ -56,15 +52,15 @@ class Mixnet_env(AECEnv):
         self.action_spaces["player_1"] = Discrete(self.num_nodes + 1)
 
         self.observation_spaces = {}
-        self.observation_spaces["player_0"] = MultiDiscrete([3 for _ in range(self.num_nodes)] + [2 for _ in range(self.num_nodes)])
-        self.observation_spaces["player_1"] = MultiDiscrete([3 for _ in range(self.num_nodes)] + [2 for _ in range(self.num_nodes)])
+        self.observation_spaces["player_0"] = Box(-1.0, 1.0, (2 * self.num_nodes,), np.float32)
+        self.observation_spaces["player_1"] = Box(-1.0, 1.0, (2 * self.num_nodes,), np.float32)
 
-        self.graph = Graph(nodes_per_layer=[25, 25, 25, 25])
+        self.graph = Graph(nodes_per_layer=[10, 10, 10])
 
 
     @functools.lru_cache(maxsize=None)
     def observation_space(self, agent):
-        return MultiDiscrete([3 for _ in range(self.num_nodes)] + [2 for _ in range(self.num_nodes)])
+        return Box(0.0, 1.0, (2 * self.num_nodes,), np.float32)
 
     # Action space should be defined here.
     # If your spaces change over time, remove this line (disable caching).

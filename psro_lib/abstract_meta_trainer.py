@@ -31,7 +31,7 @@ def sample_episode(env, policies):
 
   env.reset()
 
-  if env.metadata["name"] == "mixnet":
+  if env.metadata["name"] == "mixnet": # Running recursive head.
     for agent in env.agent_iter():
       agent_id = name_to_id[agent]
       observation, reward, termination, truncation, info = env.last()
@@ -41,11 +41,14 @@ def sample_episode(env, policies):
       num_obs = env.observation_spaces[agent].shape or env.observation_spaces[agent].n
       combinatorial_action = np.concatenate((observation, np.zeros(num_action - 1)))
 
+      # print("a:", policies[0].policy)
+
       while True:
         if termination or truncation:
           action = None
+          break
         else:
-          if isinstance(env, OpenSpielCompatibilityV0):
+          if isinstance(env, OpenSpielCompatibilityV0): #TODO: This if and elif are not correctly handled for recursive.
             action_mask = info["action_mask"]
             observation = observation["observation"]
             action, _ = policies[agent_id].predict(observation, action_masks=action_mask)
@@ -54,15 +57,22 @@ def sample_episode(env, policies):
             observation = observation["observation"]
             action, _ = policies[agent_id].predict(observation, action_masks=action_mask)
           else:
-            action, _ = policies[agent_id].predict(observation)
+            # print("d:", len(combinatorial_action))
+            action, _ = policies[agent_id].predict(combinatorial_action)
 
-        if action == num_action - 1 or action == None or combinatorial_action[num_obs + action] == 1:
+        # print("ACT:", action)
+        if action == num_action - 1 or action == None:
+          break
+        elif combinatorial_action[int(num_obs[0] / 2) + action] == 1:
           break
         else:
-          combinatorial_action[num_obs + action] = 1
+          combinatorial_action[int(num_obs[0]/2) + action] = 1
 
       # print("ACT:", action)
-      env.step(combinatorial_action[num_obs:])
+      if action is None:
+        env.step(action)
+      else:
+        env.step(combinatorial_action[int(num_obs[0]/2):])
 
 
 

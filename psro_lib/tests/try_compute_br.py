@@ -29,7 +29,7 @@ br_args = {
 rl_oracle = RLOracle(env=env,
                      best_response_class=generate_agent_class(agent_name="PPO"),
                      best_response_kwargs=br_args,
-                     total_timesteps=100000,
+                     total_timesteps=300000,
                      sigma=0.0,
                      verbose=0)
 
@@ -43,8 +43,8 @@ rl_oracle = RLOracle(env=env,
 
 
 
-# old_policies = [[ExcludePolicy(env=env, agent_id=0)], [ExcludePolicy(env=env, agent_id=1)]]
-old_policies = [[FullDefensePolicy(env=env, agent_id=0)], [FullDefensePolicy(env=env, agent_id=1)]]
+old_policies = [[ExcludePolicy(env=env, agent_id=0)], [ExcludePolicy(env=env, agent_id=1)]]
+# old_policies = [[FullDefensePolicy(env=env, agent_id=0)], [FullDefensePolicy(env=env, agent_id=1)]]
 meta_probabilities = [[1.0], [1.0]]
 
 
@@ -62,8 +62,8 @@ def sample_episode(env, policies):
 
   env.reset()
   average_action = {}
-  average_action["player_0"] = []
-  average_action["player_1"] = []
+  average_action["player_0"] = np.zeros(6)
+  average_action["player_1"] = np.zeros(6)
   for agent in env.agent_iter():
     print("----------------")
     print("Agent:", agent)
@@ -87,11 +87,11 @@ def sample_episode(env, policies):
             action, _ = policies[agent_id][0].predict(observation)
 
     print("Action:", action)
-    average_action[agent].append(action)
+    # average_action[agent] += action
     env.step(action)
 
-  # print("DEF:", np.mean(average_action["player_0"], axis=0))
-  # print("ATT:", np.mean(average_action["player_1"], axis=0))
+  # print("DEF:", average_action["player_0"])
+  # print("ATT:", average_action["player_1"])
   return rewards
 
 
