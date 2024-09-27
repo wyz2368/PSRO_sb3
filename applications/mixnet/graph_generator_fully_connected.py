@@ -22,7 +22,7 @@ D_DEFEND_REW_MAX = 100.0
 FALSE_NEGATIVE_MIN = 0.1  # prob of sending positive signal if node is active
 FALSE_NEGATIVE_MAX = 0.3
 FALSE_ALARM_MIN = 0.2  # prob of sending positive signal if node is inactive(false alarm)
-FALSE_ALARM_MAX = 0.6
+FALSE_ALARM_MAX = 0.4
 ACTPROB_MIN = 0.2
 ACTPROB_MAX = 0.4
 
@@ -185,7 +185,7 @@ class Node():
 
 
 def uniform_sampling_params():
-    state = random.choices([-1,0,1], weights = [0, 0, 4])[0]
+    state = random.choices([-1,0,1], weights = [1, 7, 2])[0]
 
     # Attacker's rewards/costs
     a_deploy_cost = random.uniform(A_DEPLOY_COST_MIN, A_DEPLOY_COST_MAX)

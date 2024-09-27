@@ -1,18 +1,22 @@
-from applications.mixnet_homo.homo_mixnet_env import Mixnet_env
+import numpy as np
+
+from applications.mixnet.mixnet_env import Mixnet_env
 
 
 def run_env():
     env = Mixnet_env()
 
-    env1 = env
-    env1.reset()
+    env.reset()
 
-    print(env.action_spaces)
+
+    # print("states:", env.observe("player_1"))
 
     i = 1
-    for agent in env1.agent_iter():
+    for agent in env.agent_iter():
         print("--{}--".format(i))
-        observation, reward, termination, truncation, info = env1.last()
+        print("agent {}".format(agent))
+        observation, reward, termination, truncation, info = env.last()
+        print("states:", env.observe("player_1"))
         print("observation:", observation)
         print("reward:", reward)
         print("termination:", termination)
@@ -21,12 +25,17 @@ def run_env():
             action = None
         else:
             # this is where you would insert your policy
-            action = env1.action_space(agent).sample()
+            # action = env.action_space(agent).sample()
+            action = np.ones(30)
 
-        env1.step(action)
+        env.step(action)
         print("action:", action)
 
         i += 1
+
+    # Test reset
+    print("==== Test ====")
+
 
 
 
