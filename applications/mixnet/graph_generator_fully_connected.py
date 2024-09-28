@@ -18,13 +18,15 @@ D_USAGE_PENALTY_MIN = -20.0  # the penalty of not having enough paths for the de
 D_USAGE_PENALTY_MAX = -70.0
 D_DEFEND_REW_MIN = 30.0  # the reward of successfully excluding a compromised node
 D_DEFEND_REW_MAX = 100.0
+D_EXCLUDE_MIN = -100.0
+D_EXCLUDE_MAX = -150.0
 # Noisy observations/attack success rate
 FALSE_NEGATIVE_MIN = 0.1  # prob of sending positive signal if node is active
 FALSE_NEGATIVE_MAX = 0.3
 FALSE_ALARM_MIN = 0.2  # prob of sending positive signal if node is inactive(false alarm)
 FALSE_ALARM_MAX = 0.4
-ACTPROB_MIN = 0.5
-ACTPROB_MAX = 0.8
+ACTPROB_MIN = 0.7
+ACTPROB_MAX = 1.0
 
 
 
@@ -43,6 +45,7 @@ class Node():
                  d_deploy_cost=0.0,  # the cost of deploying a new server for the defender
                  d_maintain_cost=0.0, # the cost of maintaining a server for the defender
                  d_usage_penalty=0.0, # the penalty of not having enough paths for the defender
+                 d_exclude_cost=0.0,
                  d_defend_rew=0.0, # the reward of successfully excluding a compromised node
                  false_negative=1.0,  # prob of sending positive signal if node is active
                  false_alarm=0.0,  # prob of sending positive signal if node is inactive(false alarm)
@@ -61,6 +64,7 @@ class Node():
         self.d_maintain_cost = d_maintain_cost  # the cost of maintaining a server for the defender
         self.d_usage_penalty = d_usage_penalty  # the penalty of not having enough paths for the defender
         self.d_defend_rew = d_defend_rew  # the reward of successfully excluding a compromised node
+        self.d_exclude_cost = d_exclude_cost
         # Common probability distributions
         self.false_negative = false_negative
         self.false_alarm = false_alarm
@@ -185,7 +189,7 @@ class Node():
 
 
 def uniform_sampling_params():
-    state = random.choices([-1,0,1], weights = [1, 7, 2])[0]
+    state = random.choices([-1,0,1], weights = [1, 5, 4])[0]
 
     # Attacker's rewards/costs
     a_deploy_cost = random.uniform(A_DEPLOY_COST_MIN, A_DEPLOY_COST_MAX)
@@ -196,6 +200,7 @@ def uniform_sampling_params():
     d_maintain_cost = random.uniform(D_MAINTAIN_COST_MIN, D_MAINTAIN_COST_MAX)
     d_usage_penalty = random.uniform(D_USAGE_PENALTY_MIN, D_USAGE_PENALTY_MAX)
     d_defend_rew = random.uniform(D_DEFEND_REW_MIN, D_DEFEND_REW_MAX)
+    d_exclude_cost = random.uniform(D_EXCLUDE_MIN, D_EXCLUDE_MAX)
     # Noisy observations/attack success rate
     false_negative = random.uniform(FALSE_NEGATIVE_MIN, FALSE_NEGATIVE_MAX)
     false_alarm = random.uniform(FALSE_ALARM_MIN, FALSE_ALARM_MAX)
@@ -210,6 +215,7 @@ def uniform_sampling_params():
         'd_maintain_cost': d_maintain_cost,
         'd_usage_penalty': d_usage_penalty,
         'd_defend_rew': d_defend_rew,
+        'd_exclude_cost': d_exclude_cost,
         'false_negative': false_negative,
         'false_alarm': false_alarm,
         'actProb': actProb
@@ -246,8 +252,8 @@ class Graph():
     def __init__(self,
                  nodes_per_layer,
                  params_path=None,
-                 alpha=1,
-                 beta=1,
+                 alpha=10,
+                 beta=10,
                  threshold=27,
                  traffic_penalty=-1e3):
         if params_path is not None:
@@ -369,7 +375,7 @@ class Graph():
         return self.get_def_observation(), self.get_att_observation(), reward_def, reward_att, self.get_graph_state()
 
 
-    def apply_def_action(self, node_id):
+    def apply_def_action(self, node_id): #TODO: where is exclude cost?
         """
         Apply defender's action.
         """
@@ -393,6 +399,7 @@ class Graph():
 
             self.deployed_num_nodes_per_layer[self.id_to_layer[node_id]] -= 1
             node.set_state(-1)
+            rew += node.d_exclude_cost
 
         return rew
 

@@ -42,6 +42,11 @@ def sample_episode(env, policies):
       combinatorial_action = np.concatenate((observation, np.zeros(num_action - 1)))
 
       # print("a:", policies[0].policy)
+      # print("---------")
+      # print("agent:", agent)
+      # print("observation:", observation)
+      # print("reward:", reward)
+      # print("rewards:", rewards)
 
       while True:
         if termination or truncation:
@@ -57,7 +62,7 @@ def sample_episode(env, policies):
             observation = observation["observation"]
             action, _ = policies[agent_id].predict(observation, action_masks=action_mask)
           else:
-            # print("d:", len(combinatorial_action))
+            # print("Inside obs:", combinatorial_action)
             action, _ = policies[agent_id].predict(combinatorial_action)
 
         # print("ACT:", action)
@@ -68,10 +73,10 @@ def sample_episode(env, policies):
         else:
           combinatorial_action[int(num_obs[0]/2) + action] = 1
 
-      # print("ACT:", action)
       if action is None:
         env.step(action)
       else:
+        # print("COMB ACT:", combinatorial_action[int(num_obs[0]/2):])
         env.step(combinatorial_action[int(num_obs[0]/2):])
 
 
