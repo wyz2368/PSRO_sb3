@@ -27,7 +27,7 @@ br_args = {
         "hidden_layers": 4}
 
 rl_oracle = RLOracle(env=env,
-                     best_response_class=generate_agent_class(agent_name="DQN"),
+                     best_response_class=generate_agent_class(agent_name="PPO"),
                      best_response_kwargs=br_args,
                      total_timesteps=1000000,
                      sigma=0.0,
