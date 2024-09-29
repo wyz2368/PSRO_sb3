@@ -5,8 +5,8 @@ from applications.mixnet.utils import load_pkl, save_pkl
 # Attacker's rewards/costs
 A_DEPLOY_COST_MIN = -10.0  # the cost of deploying a new server for the attacker
 A_DEPLOY_COST_MAX = -30.0
-A_ATTACK_COST_MIN = -30.0  # the cost of attacking a node for the attacker
-A_ATTACK_COST_MAX = -60.0
+A_ATTACK_COST_MIN = -10.0  # the cost of attacking a node for the attacker
+A_ATTACK_COST_MAX = -15.0
 A_MAINTAIN_COST_MIN = -10.0  # the cost of maintaining a server for the attacker
 A_MAINTAIN_COST_MAX = -100.0
 # Defender's rewards/costs

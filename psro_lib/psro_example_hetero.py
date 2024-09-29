@@ -46,11 +46,11 @@ flags.DEFINE_integer("n_players", 2, "The number of players.")
 # PSRO related
 flags.DEFINE_string("meta_strategy_method", "nash",
                     "Name of meta strategy computation method.")
-flags.DEFINE_integer("sims_per_entry", 5,
+flags.DEFINE_integer("sims_per_entry", 200,
                      ("Number of simulations to run to estimate each element"
                       "of the game outcome matrix."))
 
-flags.DEFINE_integer("gpsro_iterations", 4,
+flags.DEFINE_integer("gpsro_iterations", 30,
                      "Number of training steps for GPSRO.")
 flags.DEFINE_bool("symmetric_game", False, "Whether to consider the current "
                                            "game as a symmetric game.")
@@ -61,7 +61,7 @@ flags.DEFINE_string("rectifier", "",
 
 # General (RL) agent parameters
 flags.DEFINE_string("oracle_type", "PPO", "DQN, PPO, MaskablePPO (MaskableActorCriticPolicy)")
-flags.DEFINE_integer("number_training_episodes", int(500), "Number training (default 1e4) " ############
+flags.DEFINE_integer("number_training_episodes", int(50000), "Number training (default 1e4) " ############
                                                            "episodes per RL policy. Used for PG and DQN")
 flags.DEFINE_float("self_play_proportion", 0.0, "Self play proportion")
 flags.DEFINE_integer("hidden_layer_size", 256, "Hidden layer size")
