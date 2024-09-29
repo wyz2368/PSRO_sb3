@@ -50,7 +50,7 @@ flags.DEFINE_integer("sims_per_entry", 200,
                      ("Number of simulations to run to estimate each element"
                       "of the game outcome matrix."))
 
-flags.DEFINE_integer("gpsro_iterations", 30,
+flags.DEFINE_integer("gpsro_iterations", 14,
                      "Number of training steps for GPSRO.")
 flags.DEFINE_bool("symmetric_game", False, "Whether to consider the current "
                                            "game as a symmetric game.")
@@ -61,7 +61,7 @@ flags.DEFINE_string("rectifier", "",
 
 # General (RL) agent parameters
 flags.DEFINE_string("oracle_type", "PPO", "DQN, PPO, MaskablePPO (MaskableActorCriticPolicy)")
-flags.DEFINE_integer("number_training_episodes", int(50000), "Number training (default 1e4) " ############
+flags.DEFINE_integer("number_training_episodes", int(300000), "Number training (default 1e4) " ############
                                                            "episodes per RL policy. Used for PG and DQN")
 flags.DEFINE_float("self_play_proportion", 0.0, "Self play proportion")
 flags.DEFINE_integer("hidden_layer_size", 256, "Hidden layer size")
@@ -169,16 +169,16 @@ def gpsro_looper(env, oracle, agents, writer, checkpoint_dir=None, seed=None):
         stored_meta_probabilities = nash_meta_probabilities
         stored_expected_payoffs = expected_payoffs
 
-
+        logger.info("Expected payoff : {}".format(expected_payoffs))
         save_pkl(checkpoint_dir + "/meta_game.pkl", meta_game)
 
-    meta_game = g_psro_solver.get_meta_game()
-    all_ne = pygbt_solve_matrix_games(meta_game, method="enummixed", mode="all")
-    for ne in all_ne:
-        logger.info("===== Find all NE =====")
-        expected_payoffs = mixed_strategy_payoff(meta_game, ne)
-        logger.info("Nash Probabilities : {}".format(ne))
-        logger.info("Expected payoff : {}".format(expected_payoffs))
+    # meta_game = g_psro_solver.get_meta_game()
+    # all_ne = pygbt_solve_matrix_games(meta_game, method="enummixed", mode="all")
+    # for ne in all_ne:
+    #     logger.info("===== Find all NE =====")
+    #     expected_payoffs = mixed_strategy_payoff(meta_game, ne)
+    #     logger.info("Nash Probabilities : {}".format(ne))
+    #     logger.info("Expected payoff : {}".format(expected_payoffs))
 
 
 

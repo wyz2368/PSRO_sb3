@@ -25,7 +25,7 @@ FALSE_NEGATIVE_MIN = 0.1  # prob of sending positive signal if node is active
 FALSE_NEGATIVE_MAX = 0.3
 FALSE_ALARM_MIN = 0.2  # prob of sending positive signal if node is inactive(false alarm)
 FALSE_ALARM_MAX = 0.4
-ACTPROB_MIN = 0.7
+ACTPROB_MIN = 0.8
 ACTPROB_MAX = 1.0
 
 
