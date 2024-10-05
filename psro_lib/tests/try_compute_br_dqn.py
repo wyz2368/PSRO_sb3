@@ -20,7 +20,6 @@ env = get_env_factory("mixnet_hetero")()
 env.reset()
 #
 
-
 br_args = {
         "policy": "MlpPolicy",
         "hidden_layers_sizes": 256,
@@ -29,22 +28,30 @@ br_args = {
 rl_oracle = RLOracle(env=env,
                      best_response_class=generate_agent_class(agent_name="PPO"),
                      best_response_kwargs=br_args,
-                     total_timesteps=1000000,
+                     total_timesteps=500000,
                      sigma=0.0,
                      verbose=0)
+
+agents = rl_oracle.generate_new_policies()
 
 
 
 # old_policies = [[ExcludePolicy(env=env, agent_id=0)], [ExcludePolicy(env=env, agent_id=1)]]
-old_policies = [[FullDefensePolicy_Recursive(env=env, agent_id=0)], [FullDefensePolicy_Recursive(env=env, agent_id=1)]]
+# old_policies = [[FullDefensePolicy_Recursive(env=env, agent_id=0)], [FullDefensePolicy_Recursive(env=env, agent_id=1)]]
+old_policies = [[agents[0]], [agents[1]]]
+
 meta_probabilities = [[1.0], [1.0]]
+
+
 
 
 new_policies = rl_oracle(old_policies=old_policies,
                          meta_probabilities=meta_probabilities,
                          copy_from_prev=False)
 
+# new_policies[0][0] = agents[0]
 
+# new_policies = old_policies
 
 def sample_episode(env, policies):
   name_to_id = {}
@@ -105,6 +112,9 @@ def sample_episode(env, policies):
   return rewards
 
 
-for _ in range(10):
-  rewards = sample_episode(env=env, policies=new_policies)
-  print(rewards)
+for _ in range(100):
+  rewards1 = sample_episode(env=env, policies=old_policies)
+  new_policies[1][0] = agents[1]
+  rewards2 = sample_episode(env=env, policies=new_policies)
+  print(rewards1)
+  print(rewards2)

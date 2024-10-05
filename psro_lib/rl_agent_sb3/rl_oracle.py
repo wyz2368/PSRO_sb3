@@ -10,6 +10,8 @@ from stable_baselines3.common.callbacks import EvalCallback
 
 from psro_lib.wrappers.gym_wrapper import GymPettingZooEnv
 from psro_lib.wrappers.gym_wrapper_recursive import GymPettingZooEnv as GymPettingZooEnv_recursive
+from psro_lib.wrappers.gym_wrapper_recursive_reward import GymPettingZooEnv as GymPettingZooEnv_v2
+
 from psro_lib.rl_agent_sb3.rl_factory import generate_agent_policy
 from sb3_contrib import MaskablePPO
 
@@ -29,6 +31,10 @@ def unfreeze_all(policies):
       for param in policy.policy.parameters():
         param.requires_grad = True
 
+def print_params(params):
+  for param in params:
+    print(param)
+
 
 class RLOracle(optimization_oracle.AbstractOracle):
   """Oracle handling Approximate Best Responses computation."""
@@ -46,7 +52,8 @@ class RLOracle(optimization_oracle.AbstractOracle):
     """
     self.env = env
     if self.env.metadata["name"] == "mixnet":
-      self.gym_env = GymPettingZooEnv_recursive(petz_env=env, learning_player_id=0)
+      # self.gym_env = GymPettingZooEnv_recursive(petz_env=env, learning_player_id=0)
+      self.gym_env = GymPettingZooEnv_v2(petz_env=env, learning_player_id=0)
     else:
       self.gym_env = GymPettingZooEnv(petz_env=env, learning_player_id=0)
 
@@ -117,7 +124,6 @@ class RLOracle(optimization_oracle.AbstractOracle):
       self.gym_env.reset()
       current_policy = new_policies[learning_player]
       current_policy.learn(total_timesteps=self.total_timesteps) #TODO: can add more parameters for learning.
-
 
   def __call__(self,
                old_policies,

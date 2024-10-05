@@ -99,7 +99,38 @@ class GymPettingZooEnv(gym.Env):
             return self.combinatoral_action, reward/10, termination, truncation, info
         else:
             self.combinatoral_action[int(num_obs[0]/2) + action] = 1
-            return self.combinatoral_action, 0, False, False, {}
+            # Reward shaping
+            rew = 0
+            id_to_node = self.petz_env.graph.id_to_node
+            node = id_to_node[action]
+            state = node.state
+            if self.learning_player_id == 0:
+                # if state == -1:
+                #     rew += node.d_deploy_cost
+                # else:
+                #     if state == 1:
+                #         rew += node.d_defend_rew
+                #     rew += node.d_exclude_cost
+                if state == 1:
+                    rew += node.d_defend_rew
+                return self.combinatoral_action, rew, False, False, {}
+            else:
+                if self.def_actions[action] == 1:
+                    if state == -1:
+                        rew += node.a_deploy_cost
+                    else:
+                        rew += node.a_attack_cost
+                else:
+                    if state == -1:
+                        rew += 50
+                        rew += node.a_deploy_cost
+                    elif state == 1:
+                        rew += 100
+                        rew += node.a_attack_cost
+                    else:
+                        rew += node.a_attack_cost
+
+                return self.combinatoral_action, rew, False, False, {}
 
     def run_until_the_learning_player(self):
         # The step function changes the current player, so retrive current player again.
@@ -155,6 +186,8 @@ class GymPettingZooEnv(gym.Env):
             if action is None:
                 self.petz_env.step(action)
             else:
+                if self.learning_player_string == "player_1":
+                    self.def_actions = combinatorial_action[int(num_obs[0]/2):]
                 self.petz_env.step(combinatorial_action[int(num_obs[0]/2):])
             current_agent_string = self.petz_env.agent_selection
 

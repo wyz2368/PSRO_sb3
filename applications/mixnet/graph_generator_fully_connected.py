@@ -8,7 +8,7 @@ A_DEPLOY_COST_MAX = -30.0
 A_ATTACK_COST_MIN = -10.0  # the cost of attacking a node for the attacker
 A_ATTACK_COST_MAX = -15.0
 A_MAINTAIN_COST_MIN = -10.0  # the cost of maintaining a server for the attacker
-A_MAINTAIN_COST_MAX = -100.0
+A_MAINTAIN_COST_MAX = -50.0
 # Defender's rewards/costs
 D_DEPLOY_COST_MIN = -10.0  # the cost of deploying a new server for the defender
 D_DEPLOY_COST_MAX = -30.0
@@ -26,7 +26,7 @@ FALSE_NEGATIVE_MAX = 0.3
 FALSE_ALARM_MIN = 0.2  # prob of sending positive signal if node is inactive(false alarm)
 FALSE_ALARM_MAX = 0.4
 ACTPROB_MIN = 0.8
-ACTPROB_MAX = 1.0
+ACTPROB_MAX = 0.1
 
 
 
@@ -253,7 +253,7 @@ class Graph():
                  nodes_per_layer,
                  params_path=None,
                  alpha=10,
-                 beta=10,
+                 beta=1000,
                  threshold=27,
                  traffic_penalty=-1e3):
         if params_path is not None:
@@ -328,6 +328,7 @@ class Graph():
         """
         Receive actions from the defender and the attacker, and update the state and reward.
         """
+        # print(def_binary_actions, att_binary_actions)
         if not isinstance(def_binary_actions, np.ndarray) or not isinstance(att_binary_actions, np.ndarray):
             raise ValueError("Actions are not in numpy array.")
         if len(def_binary_actions) != self.get_num_nodes() or len(att_binary_actions) != self.get_num_nodes():
@@ -360,7 +361,7 @@ class Graph():
                 node = self.id_to_node[node_id]
                 reward_att += node.a_maintain_cost
 
-        # Success linkage of users.
+        # Success linkage of users. #TODO: test this.
         reward_att += self.alpha * np.prod(self.active_num_nodes_per_layer)
         reward_def -= self.beta * np.prod(self.active_num_nodes_per_layer)
 

@@ -1,3 +1,5 @@
+import random
+
 import numpy as np
 
 class FullDefensePolicy_Recursive:
@@ -42,3 +44,14 @@ class DeployPolicy_Recursive:
         nodes_states = self.env.observe("player_1")
         existing_nodes = np.where(nodes_states >= -1)[0]
         self.actions = iter(list(range(existing_nodes)))
+
+class RandomPolicy_Recursive:
+    def __init__(self, env, agent_id):
+        self.env = env
+        self.player_string = env.possible_agents[agent_id]
+        self.num_action = self.env.num_nodes
+
+    def predict(self, obs, action_masks=None):
+        return self.num_action - 1, None
+        # return random.choice(range(self.num_action)), None
+
