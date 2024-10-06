@@ -36,7 +36,7 @@ from psro_lib.rl_agent_sb3.rl_oracle import RLOracle, freeze_all
 from psro_lib.utils import init_logger, save_pkl
 from psro_lib.eval_utils import regret_of_last_iter, mixed_strategy_payoff
 from solution_solvers.nash_solver.pygambit_solver import pygbt_solve_matrix_games
-from psro_lib.rl_agent_sb3.special_policies_recursive import RandomPolicy_Recursive
+from psro_lib.rl_agent_sb3.special_policies_recursive import RandomPolicy_Recursive, Noop_Recursive
 
 
 FLAGS = flags.FLAGS
@@ -51,7 +51,7 @@ flags.DEFINE_integer("sims_per_entry", 200,
                      ("Number of simulations to run to estimate each element"
                       "of the game outcome matrix."))
 
-flags.DEFINE_integer("gpsro_iterations", 30,
+flags.DEFINE_integer("gpsro_iterations", 15,
                      "Number of training steps for GPSRO.")
 flags.DEFINE_bool("symmetric_game", False, "Whether to consider the current "
                                            "game as a symmetric game.")
@@ -62,7 +62,7 @@ flags.DEFINE_string("rectifier", "",
 
 # General (RL) agent parameters
 flags.DEFINE_string("oracle_type", "PPO", "DQN, PPO, MaskablePPO (MaskableActorCriticPolicy)")
-flags.DEFINE_integer("number_training_episodes", int(1000000), "Number training (default 1e4) " ############
+flags.DEFINE_integer("number_training_episodes", int(500000), "Number training (default 1e4) " ############
                                                            "episodes per RL policy. Used for PG and DQN")
 flags.DEFINE_float("self_play_proportion", 0.0, "Self play proportion")
 flags.DEFINE_integer("hidden_layer_size", 256, "Hidden layer size")
@@ -106,7 +106,8 @@ def init_oracle(env):
     # agents = oracle.generate_new_policies()
     # freeze_all(agents)
 
-    agents = [RandomPolicy_Recursive(env=env, agent_id=0), RandomPolicy_Recursive(env=env, agent_id=1)]
+    # agents = [RandomPolicy_Recursive(env=env, agent_id=0), RandomPolicy_Recursive(env=env, agent_id=1)]
+    agents = [Noop_Recursive(env=env, agent_id=0), Noop_Recursive(env=env, agent_id=1)]
 
     return oracle, agents
 

@@ -2,7 +2,7 @@ from psro_lib.wrappers.gym_wrapper_recursive import GymPettingZooEnv
 from psro_lib.wrappers.gym_wrapper_recursive_reward import GymPettingZooEnv as GymPettingZooEnv_v2
 
 from pettingzoo.classic import rps_v2, tictactoe_v3
-from psro_lib.rl_agent_sb3.special_policies_recursive import RandomPolicy_Recursive
+from psro_lib.rl_agent_sb3.special_policies_recursive import RandomPolicy_Recursive, Noop_Recursive
 from applications.mixnet.mixnet_env import Mixnet_env
 from psro_lib.rl_agent_sb3.special_policies_recursive import DeployPolicy_Recursive, FullDefensePolicy_Recursive, ExcludePolicy_Recursive
 from psro_lib.rl_agent_sb3.rl_factory import generate_agent_class
@@ -44,8 +44,9 @@ petz_env.reset()
 _, agents = init_oracle(petz_env)
 
 # old_policies = [[RandomPolicy_Recursive(env=petz_env, agent_id=0)], [RandomPolicy_Recursive(env=petz_env, agent_id=1)]]
+old_policies = [[Noop_Recursive(env=petz_env, agent_id=0)], [Noop_Recursive(env=petz_env, agent_id=1)]]
 
-old_policies = [[agents[0]], [agents[1]]]
+# old_policies = [[agents[0]], [agents[1]]]
 
 meta_probabilities = [[1.0], [1.0]]
 
@@ -59,6 +60,7 @@ observation, info = env.reset()
 
 
 random_policy = RandomPolicy_Recursive(env=petz_env, agent_id=1)
+full_action_policy = FullDefensePolicy_Recursive(env=petz_env, agent_id=1)
 
 agent = "player_1"
 num_action = petz_env.action_spaces[agent].shape or petz_env.action_spaces[agent].n
@@ -66,7 +68,7 @@ num_obs = petz_env.observation_spaces[agent].shape or petz_env.observation_space
 
 
 for _ in range(100):
-   action, _ = random_policy.predict(observation)
+   action, _ = full_action_policy.predict(observation)
    print("---------------")
    print("action", action)
    observation, reward, termination, truncation, info = env.step(action)

@@ -105,14 +105,15 @@ class GymPettingZooEnv(gym.Env):
             node = id_to_node[action]
             state = node.state
             if self.learning_player_id == 0:
-                # if state == -1:
-                #     rew += node.d_deploy_cost
-                # else:
-                #     if state == 1:
-                #         rew += node.d_defend_rew
-                #     rew += node.d_exclude_cost
-                if state == 1:
-                    rew += node.d_defend_rew
+                if state == -1:
+                    rew += 50
+                    rew += node.d_deploy_cost
+                else:
+                    if state == 1:
+                        rew += node.d_defend_rew
+                    rew += node.d_exclude_cost
+                # if state == 1:
+                #     rew += node.d_defend_rew
                 return self.combinatoral_action, rew, False, False, {}
             else:
                 if self.def_actions[action] == 1:
@@ -124,7 +125,7 @@ class GymPettingZooEnv(gym.Env):
                     if state == -1:
                         rew += 50
                         rew += node.a_deploy_cost
-                    elif state == 1:
+                    elif state == 0:
                         rew += 100
                         rew += node.a_attack_cost
                     else:

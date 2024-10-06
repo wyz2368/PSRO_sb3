@@ -52,6 +52,16 @@ class RandomPolicy_Recursive:
         self.num_action = self.env.num_nodes
 
     def predict(self, obs, action_masks=None):
+        return random.choice(range(self.num_action)), None
+
+class Noop_Recursive:
+    def __init__(self, env, agent_id):
+        self.env = env
+        self.player_string = env.possible_agents[agent_id]
+        self.num_action = self.env.num_nodes
+
+    def predict(self, obs, action_masks=None):
         return self.num_action - 1, None
-        # return random.choice(range(self.num_action)), None
+
+
 
