@@ -46,13 +46,13 @@ class Mixnet_env(AECEnv):
                             num_nodes_per_layer=[1000, 1000, 1000],
                             false_alarm=[0.3, 0.2, 0.3], # false alarm rate
                             false_negative=[0.2, 0.2, 0.2], # false negative rate
-                            a_attack_cost=[-150, -150, -150], # attacker's attacking cost
+                            a_attack_cost=[-50, -50, -50], # attacker's attacking cost
                             a_deploy_cost=[-200, -200, -200], # attacker's deployment cost
                             a_maintain_cost=[-50, -50, -50], # attacker's maintaining cost
-                            active_rate=[0.6, 0.6, 0.3], # the possibility of sucessfully activate a node
+                            active_rate=[0.6, 0.6, 0.6], # the possibility of sucessfully activate a node
                             d_exclude_cost=[-300, -300, -300], # defender's cost on excluding a node
                             d_deploy_cost=[-200, -200, -200], # defender's deployment cost
-                            d_maintain_cost=[-50, -50, -150],
+                            d_maintain_cost=[-50, -50, -50],
                             usage_threshold=0.03, # the lower bound of usage without penalty
                             d_penalty=-50, # defender's penalty for insufficient usage
                             a_alpha=60000,  # coefficient for the reward

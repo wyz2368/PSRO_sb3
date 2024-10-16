@@ -62,7 +62,7 @@ flags.DEFINE_string("rectifier", "",
 
 # General (RL) agent parameters
 flags.DEFINE_string("oracle_type", "PPO", "DQN, PPO, MaskablePPO (MaskableActorCriticPolicy)")
-flags.DEFINE_integer("number_training_episodes", int(500000), "Number training (default 1e4) " ############
+flags.DEFINE_integer("number_training_episodes", int(100000), "Number training (default 1e4) " ############
                                                            "episodes per RL policy. Used for PG and DQN")
 flags.DEFINE_float("self_play_proportion", 0.0, "Self play proportion")
 flags.DEFINE_integer("hidden_layer_size", 256, "Hidden layer size")

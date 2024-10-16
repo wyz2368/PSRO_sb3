@@ -36,6 +36,7 @@ from psro_lib.rl_agent_sb3.rl_oracle import RLOracle, freeze_all
 from psro_lib.utils import init_logger, save_pkl
 from psro_lib.eval_utils import regret_of_last_iter, mixed_strategy_payoff
 from solution_solvers.nash_solver.pygambit_solver import pygbt_solve_matrix_games
+from psro_lib.eval_ne import eval_mixed_strategy
 
 
 FLAGS = flags.FLAGS
@@ -46,11 +47,11 @@ flags.DEFINE_integer("n_players", 2, "The number of players.")
 # PSRO related
 flags.DEFINE_string("meta_strategy_method", "nash",
                     "Name of meta strategy computation method.")
-flags.DEFINE_integer("sims_per_entry", 1000,
+flags.DEFINE_integer("sims_per_entry", 200,
                      ("Number of simulations to run to estimate each element"
                       "of the game outcome matrix."))
 
-flags.DEFINE_integer("gpsro_iterations", 5,
+flags.DEFINE_integer("gpsro_iterations", 10,
                      "Number of training steps for GPSRO.")
 flags.DEFINE_bool("symmetric_game", False, "Whether to consider the current "
                                            "game as a symmetric game.")
@@ -60,8 +61,8 @@ flags.DEFINE_string("rectifier", "",
                     "(No filtering), 'rectified' for rectified.")
 
 # General (RL) agent parameters
-flags.DEFINE_string("oracle_type", "SAC", "DQN, PPO, MaskablePPO (MaskableActorCriticPolicy)")
-flags.DEFINE_integer("number_training_episodes", int(100000), "Number training (default 1e4) " ############
+flags.DEFINE_string("oracle_type", "PPO", "DQN, PPO, MaskablePPO (MaskableActorCriticPolicy)")
+flags.DEFINE_integer("number_training_episodes", int(300000), "Number training (default 1e4) " ############
                                                            "episodes per RL policy. Used for PG and DQN")
 flags.DEFINE_float("self_play_proportion", 0.0, "Self play proportion")
 flags.DEFINE_integer("hidden_layer_size", 256, "Hidden layer size")
@@ -172,14 +173,20 @@ def gpsro_looper(env, oracle, agents, writer, checkpoint_dir=None, seed=None):
 
         save_pkl(checkpoint_dir + "/meta_game.pkl", meta_game)
 
-    meta_game = g_psro_solver.get_meta_game()
-    all_ne = pygbt_solve_matrix_games(meta_game, method="enummixed", mode="all")
-    for ne in all_ne:
-        logger.info("===== Find all NE =====")
-        expected_payoffs = mixed_strategy_payoff(meta_game, ne)
-        logger.info("Nash Probabilities : {}".format(ne))
-        logger.info("Expected payoff : {}".format(expected_payoffs))
+    # meta_game = g_psro_solver.get_meta_game()
+    # all_ne = pygbt_solve_matrix_games(meta_game, method="enummixed", mode="all")
+    # for ne in all_ne:
+    #     logger.info("===== Find all NE =====")
+    #     expected_payoffs = mixed_strategy_payoff(meta_game, ne)
+    #     logger.info("Nash Probabilities : {}".format(ne))
+    #     logger.info("Expected payoff : {}".format(expected_payoffs))
+    #
 
+    # Simulate mixed strategy
+    eval_mixed_strategy(env=env,
+                        policies=g_psro_solver.get_policies(),
+                        meta_probabilies=meta_probabilities,
+                        num_episodes=10)
 
 
 def main(argv):

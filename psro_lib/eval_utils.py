@@ -414,3 +414,5 @@ def dev_regret_general(meta_games, probs):
 
     nashconv = np.sum([np.max(ele) for ele in deviation_payoffs])
     return nashconv
+
+

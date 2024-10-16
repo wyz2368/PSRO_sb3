@@ -5,28 +5,28 @@ from applications.mixnet.utils import load_pkl, save_pkl
 # Attacker's rewards/costs
 A_DEPLOY_COST_MIN = -10.0  # the cost of deploying a new server for the attacker
 A_DEPLOY_COST_MAX = -30.0
-A_ATTACK_COST_MIN = -10.0  # the cost of attacking a node for the attacker
-A_ATTACK_COST_MAX = -15.0
+A_ATTACK_COST_MIN = -30.0  # the cost of attacking a node for the attacker
+A_ATTACK_COST_MAX = -50.0
 A_MAINTAIN_COST_MIN = -10.0  # the cost of maintaining a server for the attacker
 A_MAINTAIN_COST_MAX = -20.0
 # Defender's rewards/costs
 D_DEPLOY_COST_MIN = -10.0  # the cost of deploying a new server for the defender
 D_DEPLOY_COST_MAX = -30.0
 D_MAINTAIN_COST_MIN = -10.0  # the cost of maintaining a server for the defender
-D_MAINTAIN_COST_MAX = -100.0
+D_MAINTAIN_COST_MAX = -30.0
 D_USAGE_PENALTY_MIN = -20.0  # the penalty of not having enough paths for the defender
 D_USAGE_PENALTY_MAX = -70.0
 D_DEFEND_REW_MIN = 100.0  # the reward of successfully excluding a compromised node
 D_DEFEND_REW_MAX = 200.0
-D_EXCLUDE_MIN = -100.0
-D_EXCLUDE_MAX = -150.0
+D_EXCLUDE_MIN = -10.0
+D_EXCLUDE_MAX = -15.0
 # Noisy observations/attack success rate
 FALSE_NEGATIVE_MIN = 0.1  # prob of sending positive signal if node is active
 FALSE_NEGATIVE_MAX = 0.3
 FALSE_ALARM_MIN = 0.2  # prob of sending positive signal if node is inactive(false alarm)
 FALSE_ALARM_MAX = 0.4
-ACTPROB_MIN = 0.8
-ACTPROB_MAX = 1.0
+ACTPROB_MIN = 0.4
+ACTPROB_MAX = 0.6
 
 
 
@@ -252,9 +252,9 @@ class Graph():
     def __init__(self,
                  nodes_per_layer,
                  params_path=None,
-                 alpha=10,
-                 beta=10,
-                 threshold=27,
+                 alpha=1,
+                 beta=1,
+                 threshold=27, #27,
                  traffic_penalty=-1e3):
         if params_path is not None:
             loaded_params = load_pkl(params_path)
